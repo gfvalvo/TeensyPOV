@@ -1,0 +1,683 @@
+/*
+ * TeensyPOV.cpp
+ *
+ *  Created on: Apr 12, 2018
+ *      Author: GFV
+ */
+#include "TeensyPOV.h"
+#include "textCharacters.h"
+
+static void dummy_funct(void);
+static void rpmTimerIsr(void);
+static void segmentTimerIsr(void);
+static void tdcIsrInit(void);
+static void tdcIsrActive(void);
+static void mainTdcISR(void);
+static void ledOffISR(void);
+static void updateLeds(void);
+static void allLedsOff(void);
+static void loadPattern(const LedArrayStruct *);
+static void loadColors(const uint32_t *);
+static void setParameters(uint16_t, uint8_t, uint16_t);
+static void loadString(const char *, TextPosition, uint8_t, uint8_t, uint8_t,
+		bool);
+static void setPixel(uint16_t, uint16_t, uint32_t, volatile uint32_t *);
+static uint16_t virtualToPhysicalSegment(int16_t);
+
+#ifndef SIMULATE_RPM
+static const uint32_t maxRevolutionPeriod = 100000UL; // Only run LEDs when > 10 revs / sec (600 RPM)
+#else
+static const uint32_t maxRevolutionPeriod = 30000000UL;
+#endif  //SIMULATE_RPM
+
+static const uint32_t rpmCycles = (F_BUS / 1000000UL) * maxRevolutionPeriod - 1;
+
+static const uint32_t maxNumLeds = 50;
+static const uint32_t maxNumColorBits = 6;
+static const uint32_t maxNumSegments = 256;
+static const uint32_t bitsPerSegment = maxNumLeds * maxNumColorBits;
+static const uint32_t bitsPerWord =
+		((maxNumColorBits == 3) || (maxNumColorBits == 5)
+				|| (maxNumColorBits == 6)) ? 30 : 32;
+static const uint32_t remainderBits = bitsPerSegment % bitsPerWord;
+static const uint32_t extraWord = (remainderBits != 0) ? 1 : 0;
+static const uint32_t maxColumns = (bitsPerSegment / bitsPerWord) + extraWord;
+static const uint8_t maxTextChars = maxNumSegments / (2 * 7);
+static const uint8_t minGoodRpmCount = 2;
+
+static uint8_t pixelsPerWord;
+static uint32_t numLeds;
+static CRGB *leds;
+
+volatile static uint32_t segmentArray[maxNumSegments][maxColumns];
+volatile static uint32_t colorArray[1 << maxNumColorBits];
+volatile static uint32_t currentNumColorBits = 0, currentNumSegments = 2;
+volatile static uint32_t bitCountLoad, currentColorMask;
+volatile static uint32_t goodRpmCount;
+volatile static uint32_t currentDisplaySegment;
+volatile static uint32_t currentTdcDisplaySegment = 0;
+
+volatile static uint32_t lastRpmTimerReading;
+volatile static uint8_t hallPin;
+
+static KINETISK_PIT_CHANNEL_t *rpmTimer, *segmentTimer, *ledOnTimer;
+
+static void (*funct_table[4])() = {dummy_funct, dummy_funct, dummy_funct, dummy_funct};
+static void (*tdcInteruptVector)() = dummy_funct;
+
+#ifdef SIMULATE_RPM
+static const uint32_t tdcSimulatorCycles = (F_BUS / 1000000UL) * 10000000UL - 1;
+static KINETISK_PIT_CHANNEL_t *tdcSimulator;
+#endif  // SIMULATE_RPM
+
+#ifdef DEBUG_MODE
+volatile static bool segmentTimerIsrFire = false;
+volatile static bool rpmTimerIsrFire = false;
+volatile static bool missedSegment = false;
+volatile static uint8_t tdcIsrFire = 0;
+volatile static uint32_t lastSegment;
+#endif  // DEBUG_MODE
+
+uint8_t TeensyPOV::numPov = 0;
+uint8_t TeensyPOV::currentActivePov = 0;
+
+TeensyPOV::TeensyPOV() {
+	idNum = ++numPov;
+}
+
+void TeensyPOV::load(const LedArrayStruct *pattern) {
+	image = pattern;
+	numSegments = pattern->rows;
+	numColorBits = pattern->numColorBits;
+	colorPalette = pattern->colors;
+	tdcSegment = pattern->tdcDisplaySegment;
+	numStrings = 0;
+	strings = nullptr;
+}
+
+void TeensyPOV::load(const LedArrayStruct *pattern,
+		const DisplayStringSpec *strArray, uint8_t n) {
+	image = pattern;
+	numSegments = pattern->rows;
+	numColorBits = pattern->numColorBits;
+	colorPalette = pattern->colors;
+	tdcSegment = pattern->tdcDisplaySegment;
+	strings = strArray;
+	numStrings = n;
+}
+
+void TeensyPOV::load(const DisplayStringSpec *strArray, uint8_t n) {
+	strings = strArray;
+	numStrings = n;
+	image = nullptr;
+}
+
+void TeensyPOV::activate(bool startTiming) {
+	uint8_t index;
+	const DisplayStringSpec *strPtr;
+	if (image) {
+		loadPattern(image);
+	} else {
+		if (numSegments != currentNumSegments
+				|| numColorBits != currentNumColorBits
+				|| tdcSegment != currentTdcDisplaySegment) {
+			setParameters(numSegments, numColorBits, tdcSegment);
+			loadColors(palette);
+		}
+	}
+
+	if (strings) {
+		for (index = 0; index < numStrings; index++) {
+			strPtr = strings + index;
+			loadString(strPtr->characters, strPtr->position, strPtr->topRow,
+					strPtr->textColor, strPtr->backgroundColor, strPtr->invert);
+		}
+
+	}
+
+	currentActivePov = idNum;
+
+	if (startTiming) {
+		durationTimer = millis();
+		rotationTimer = millis();
+	}
+}
+
+bool TeensyPOV::rpmGood() {
+	return (tdcInteruptVector == tdcIsrActive);
+}
+
+uint32_t TeensyPOV::getLastRPMCount() {
+	return rpmCycles - lastRpmTimerReading;
+}
+
+void TeensyPOV::loadPalette(const uint32_t *array) {
+	loadColors(array);
+}
+
+void TeensyPOV::setLed(uint16_t segment, uint16_t led, uint32_t value) {
+	setPixel(segment, led, value, &segmentArray[0][0]);
+}
+
+void TeensyPOV::setDisplay(uint16_t seg, uint8_t cBits, uint16_t tdc,
+		const uint32_t *colors) {
+	numSegments = seg;
+	numColorBits = cBits;
+	tdcSegment = tdc;
+	palette = colors;
+}
+
+void TeensyPOV::setTiming(uint32_t duration, uint32_t rotation,
+		int16_t tdcDelta) {
+	displayDuration = duration;
+	rotationPeriod = rotation;
+	rotationIncrement = tdcDelta;
+}
+
+bool TeensyPOV::update() {
+	uint32_t currentMillis;
+	int16_t segment;
+
+	currentMillis = millis();
+	if (idNum != currentActivePov) {
+		return true;
+	}
+	if (rotationPeriod > 0) {
+		if (currentMillis - rotationTimer >= rotationPeriod) {
+			rotationTimer += rotationPeriod;
+			segment = currentTdcDisplaySegment + rotationIncrement;
+			currentTdcDisplaySegment = virtualToPhysicalSegment(segment);
+		}
+
+	}
+	if (displayDuration > 0) {
+		if (currentMillis - durationTimer >= displayDuration) {
+			return true;
+		}
+	}
+	return false;
+}
+
+bool TeensyPOV::povSetup(uint8_t hPin, CRGB *ledPtr, uint8_t num) {
+	const uint8_t rpmTimerIndex = 0;
+	const uint8_t segmentTimerIndex = 1;
+	const uint8_t ledOnTimerIndex = 2;
+
+	const uint8_t rpmTimerInterruptPriority = 128;
+	const uint8_t segmentTimerInterruptPriority = 128;
+	const uint8_t ledOnTimerTimerInterruptPriority = 128;
+
+	const uint32_t ledOnPeriod = 20UL; // Leave LEDs on Time
+	const uint32_t ledOnCycles = (F_BUS / 1000000UL) * ledOnPeriod - 1;
+
+	if (num > maxNumLeds) {
+		return false;
+	}
+	hallPin = hPin;
+	leds = ledPtr;
+	numLeds = num;
+	allLedsOff(); // Initialize LEDs and set all off
+
+	// Enable Periodic Interrupt Timers (PIT) - from PJRC Teensy IntervalTimer.cpp code
+	SIM_SCGC6 |= SIM_SCGC6_PIT;
+	// solves timing problem on Teensy 3.5
+	__asm__ volatile("nop");
+	PIT_MCR = 1;
+
+	// Assign PITs
+	rpmTimer = KINETISK_PIT_CHANNELS + rpmTimerIndex;
+	segmentTimer = KINETISK_PIT_CHANNELS + segmentTimerIndex;
+	ledOnTimer = KINETISK_PIT_CHANNELS + ledOnTimerIndex;
+
+	// Configure RPM Watchdog PIT
+	rpmTimer->TCTRL = 0;							// Disable PIT
+	rpmTimer->TFLG = 1;								// Clear interrupt flag
+	rpmTimer->LDVAL = rpmCycles;					// Set count down value
+	funct_table[rpmTimerIndex] = rpmTimerIsr;		// Set ISR
+	NVIC_SET_PRIORITY(IRQ_PIT_CH0 + rpmTimerIndex, rpmTimerInterruptPriority);// Set interrupt priority
+	NVIC_ENABLE_IRQ(IRQ_PIT_CH0 + rpmTimerIndex);			// Enable interrupt
+
+	// Configure segmentTimer PIT to set LEDs at each rotation position
+	segmentTimer->TCTRL = 0;		// Disable PIT will be enabled in tdcISR()
+	segmentTimer->TFLG = 1;			// Clear interrupt flag
+	funct_table[segmentTimerIndex] = segmentTimerIsr;		// Set ISR
+	NVIC_SET_PRIORITY(IRQ_PIT_CH0 + segmentTimerIndex,
+			segmentTimerInterruptPriority);	// Set interrupt priority
+	NVIC_ENABLE_IRQ(IRQ_PIT_CH0 + segmentTimerIndex);		// Enable interrupt
+
+	// Configure LED Off PIT to turn off leds ~20us after being turned on
+	ledOnTimer->TCTRL = 0;		// Disable PIT will be enabled in tdcISR()
+	ledOnTimer->TFLG = 1;			// Clear interrupt flag
+	ledOnTimer->LDVAL = ledOnCycles;					// Set count down value
+	funct_table[ledOnTimerIndex] = ledOffISR;		// Set ISR
+	NVIC_SET_PRIORITY(IRQ_PIT_CH0 + ledOnTimerIndex,
+			ledOnTimerTimerInterruptPriority);	// Set interrupt priority
+	NVIC_ENABLE_IRQ(IRQ_PIT_CH0 + ledOnTimerIndex);	// Enable interrupt
+
+#ifdef SIMULATE_RPM
+	// Set up timer interrupt to simulate Hall sensor (Top Dead Center)
+	const uint8_t tdcSimulatorTimerIndex = 3;
+	const uint8_t tdcSimulatorInterruptPriority = 128;
+
+	tdcSimulator = KINETISK_PIT_CHANNELS + tdcSimulatorTimerIndex;
+	tdcSimulator->TCTRL = 0;// Disable PIT
+	tdcSimulator->TFLG = 1;// Clear interrupt flag
+	tdcSimulator->LDVAL = tdcSimulatorCycles;// Set count down value
+	funct_table[tdcSimulatorTimerIndex] = mainTdcISR;// Set ISR
+	NVIC_SET_PRIORITY(IRQ_PIT_CH0 + tdcSimulatorTimerIndex,
+			tdcSimulatorInterruptPriority);// Set interrupt priority
+	NVIC_ENABLE_IRQ(IRQ_PIT_CH0 + tdcSimulatorTimerIndex);// Enable interrupt
+	tdcSimulator->TCTRL = 3;
+
+#else
+	// Set up interrupt for Hall sensor (Top Dead Center)
+	pinMode(hallPin, INPUT_PULLUP);
+	attachInterrupt(hallPin, mainTdcISR, FALLING);
+#endif  // SIMULATE_RPM
+
+	setParameters(2, 1, 0);
+	return true;
+}
+
+static void loadPattern(const LedArrayStruct *patternStruct) {
+	uint32_t row, column;
+
+	if (patternStruct->rows != currentNumSegments
+			|| patternStruct->numColorBits != currentNumColorBits
+			|| patternStruct->tdcDisplaySegment != currentTdcDisplaySegment) {
+		setParameters(patternStruct->rows, patternStruct->numColorBits,
+				patternStruct->tdcDisplaySegment);
+	}
+
+	for (row = 0; row < currentNumSegments; row++) {
+		for (column = 0; column < patternStruct->columns; column++) {
+			segmentArray[row][column] = *(patternStruct->array
+					+ row * patternStruct->columns + column);
+		}
+	}
+	loadColors(patternStruct->colors);
+}
+
+static void loadString(const char *string, TextPosition pos, uint8_t topLed,
+		uint8_t color, uint8_t background, bool invert) {
+	char charBuffer[maxTextChars + 1], *bufferPosition;
+	uint8_t padPosition, len, fontMask, ledBit;
+	uint8_t charMatrix[5];
+	int8_t bufferPositionDelta;
+	uint16_t currentMaxChars, stopLed, startLed, physicalSegment;
+	uint16_t charCounter, pixelCounter, matrixCounter;
+	int16_t virtualSegment;
+
+	if (topLed >= numLeds) {
+		return;
+	}
+
+	if (topLed < 6) {
+		return;
+	}
+
+	stopLed = topLed;
+	startLed = stopLed - 6;
+
+	memset(charBuffer, ' ', maxTextChars);
+	charBuffer[maxTextChars] = '\0';
+	currentMaxChars = currentNumSegments / (2 * 7);
+	len = strlen(string);
+	if (len > currentMaxChars) {
+		len = currentMaxChars;
+	}
+	padPosition = (currentMaxChars - len) / 2;
+	strncpy(charBuffer + padPosition, string, len);
+
+	switch (pos) {
+	case TOP:
+		virtualSegment = 3 * currentNumSegments / 4 + 1;
+		virtualSegment += (currentNumSegments / 2 - currentMaxChars * 7) / 2;
+		bufferPosition = charBuffer;
+		bufferPositionDelta = 1;
+		break;
+
+	case BOTTOM:
+		virtualSegment = currentNumSegments / 4 + 1;
+		virtualSegment += (currentNumSegments / 2 - currentMaxChars * 7) / 2;
+		if (invert) {
+			bufferPosition = charBuffer + currentMaxChars - 1;
+			bufferPositionDelta = -1;
+		} else {
+			bufferPosition = charBuffer;
+			bufferPositionDelta = 1;
+		}
+		break;
+
+	default:
+		return;
+	}
+
+	physicalSegment = virtualToPhysicalSegment(virtualSegment);
+	for (charCounter = 0; charCounter < currentMaxChars; charCounter++) {
+		getMatrix(*bufferPosition, charMatrix, invert);
+
+		for (pixelCounter = startLed; pixelCounter <= stopLed; pixelCounter++) {
+			setPixel(physicalSegment, pixelCounter, background,
+					&segmentArray[0][0]);
+		}
+		virtualSegment++;
+		physicalSegment = virtualToPhysicalSegment(virtualSegment);
+
+		for (matrixCounter = 0; matrixCounter < 5; matrixCounter++) {
+			fontMask = 0x01;
+			for (pixelCounter = startLed; pixelCounter <= stopLed;
+					pixelCounter++) {
+				ledBit = 0;
+				if (charMatrix[matrixCounter] & fontMask) {
+					ledBit = 1;
+				}
+				fontMask <<= 1;
+
+				if (ledBit == 1) {
+					setPixel(physicalSegment, pixelCounter, color,
+							&segmentArray[0][0]);
+				} else {
+					setPixel(physicalSegment, pixelCounter, background,
+							&segmentArray[0][0]);
+				}
+			}
+			virtualSegment++;
+			physicalSegment = virtualToPhysicalSegment(virtualSegment);
+		}
+
+		for (pixelCounter = startLed; pixelCounter <= stopLed; pixelCounter++) {
+			setPixel(physicalSegment, pixelCounter, background,
+					&segmentArray[0][0]);
+		}
+		virtualSegment++;
+		physicalSegment = virtualToPhysicalSegment(virtualSegment);
+		bufferPosition += bufferPositionDelta;
+	}
+}
+
+static void loadColors(const uint32_t *cPtr) {
+	uint8_t index1;
+	for (index1 = 0; index1 < (1 << currentNumColorBits); index1++) {
+		colorArray[index1] = *(cPtr + index1);
+	}
+}
+
+static uint16_t virtualToPhysicalSegment(int16_t virtSegment) {
+	while (virtSegment >= (int16_t) currentNumSegments) {
+		virtSegment -= currentNumSegments;
+	}
+	while (virtSegment < 0) {
+		virtSegment += currentNumSegments;
+	}
+	return virtSegment;
+}
+
+static void setParameters(uint16_t segments, uint8_t colorBits,
+		uint16_t tdcSegment) {
+	segmentTimer->TCTRL = 0;		// Disable PIT will be enabled in tdcISR()
+	segmentTimer->TFLG = 1;			// Clear interrupt flag
+	rpmTimer->TCTRL = 0;			// Disable PIT
+	rpmTimer->TFLG = 1;				// Clear interrupt flag
+	tdcInteruptVector = dummy_funct;
+	allLedsOff();
+
+	currentNumSegments = segments;
+	currentNumColorBits = colorBits;
+	currentTdcDisplaySegment = tdcSegment;
+	currentColorMask = (1 << currentNumColorBits) - 1;
+	switch (currentNumColorBits) {
+	case 1:
+	case 2:
+	case 4:
+		bitCountLoad = 0x80000000;
+		break;
+
+	case 3:
+	case 5:
+	case 6:
+		bitCountLoad = 0x20000000;
+		break;
+
+	default:
+		break;
+	}
+	pixelsPerWord = 32 / currentNumColorBits;
+
+	for (uint16_t i = 0; i < maxNumSegments; i++) {
+		for (uint16_t j = 0; j < maxColumns; j++) {
+			segmentArray[i][j] = 0;
+		}
+	}
+	tdcInteruptVector = tdcIsrInit;
+	rpmTimer->TCTRL = 3;							// Enable PIT and interrupt
+}
+
+static void allLedsOff() {
+	//FastLED.clear();
+	uint32_t index1;
+	for (index1 = 0; index1 < numLeds; index1++) {
+		leds[index1] = CRGB::Black;
+	}
+	FastLED.show();
+}
+
+static void updateLeds() {
+	uint32_t currentWord, bitCounter;
+	uint32_t index1, index2;
+	index2 = 1;
+	currentWord = segmentArray[currentDisplaySegment][0];
+	bitCounter = bitCountLoad;
+	for (index1 = 0; index1 < numLeds; index1++) {
+		leds[index1] = colorArray[currentWord & currentColorMask];
+		currentWord >>= currentNumColorBits;
+		bitCounter >>= currentNumColorBits;
+		if (bitCounter == 0) {
+			bitCounter = bitCountLoad;
+			currentWord = segmentArray[currentDisplaySegment][index2++];
+		}
+	}
+	FastLED.show();
+	ledOnTimer->TCTRL = 3;
+}
+
+static void setPixel(uint16_t segment, uint16_t pixel, uint32_t value,
+		volatile uint32_t *segmentArray) {
+	uint8_t pixelWord, pixelShift;
+	uint32_t pixelMask, offset;
+
+	pixelWord = pixel / pixelsPerWord;
+	pixelShift = (pixel % pixelsPerWord) * currentNumColorBits;
+	pixelMask = currentColorMask << pixelShift;
+	value <<= pixelShift;
+	value &= pixelMask;
+
+	offset = segment * maxColumns + pixelWord;
+	*(segmentArray + offset) &= (~pixelMask);
+	*(segmentArray + offset) |= value;
+}
+
+static void mainTdcISR() {
+	tdcInteruptVector();
+}
+
+static void tdcIsrInit(void) {
+	// This ISR fires every time blade passes Hall detector (Top Dead Center)
+#ifdef DEBUG_MODE
+	tdcIsrFire = 2;
+#endif  // DEBUG_MODE
+
+	rpmTimer->TCTRL = 0;	// Reset RPM PIT and interrupt
+	rpmTimer->TFLG = 1;
+	rpmTimer->TCTRL = 3;
+
+	if (++goodRpmCount >= minGoodRpmCount) { // Confirm spinning at good RPM for several revolutions
+		tdcInteruptVector = tdcIsrActive;
+	}
+}
+
+static void tdcIsrActive(void) {
+	// This ISR fires every time blade passes Hall detector (Top Dead Center)
+#ifdef DEBUG_MODE
+	if (lastSegment != currentNumSegments-1) {
+		missedSegment = true;
+	}
+	tdcIsrFire = 1;
+#endif  // DEBUG_MODE
+
+	uint32_t currentRpmCounter, newSegmentCounter;
+
+	currentRpmCounter = rpmTimer->CVAL;
+	rpmTimer->TCTRL = 0;	// Reset RPM PIT and interrupt
+	rpmTimer->TFLG = 1;
+	rpmTimer->TCTRL = 3;
+	lastRpmTimerReading = currentRpmCounter;
+
+	segmentTimer->TCTRL = 0;
+	segmentTimer->TFLG = 1;
+	newSegmentCounter = (rpmCycles - currentRpmCounter) / currentNumSegments;
+	segmentTimer->LDVAL = newSegmentCounter;
+	segmentTimer->TCTRL = 3;		// Enable segment PIT and interrupt
+	currentDisplaySegment = currentTdcDisplaySegment;
+	updateLeds();	// Set LEDs per currentDisplaySegment
+	if (++currentDisplaySegment >= currentNumSegments) {
+		currentDisplaySegment = 0;
+	}
+}
+
+static void rpmTimerIsr() {
+	// This ISR fires if RPM is too low. Stop running the LEDs
+#ifdef DEBUG_MODE
+	rpmTimerIsrFire = true;
+#endif  // DEBUG_MODE
+
+	static const uint32_t errorColors[] = { CRGB::Red, CRGB::Blue };
+	uint32_t displayErrorColor;
+	segmentTimer->TCTRL = 0;		 //Disable PIT
+	segmentTimer->TFLG = 1;
+	goodRpmCount = 0;
+
+	// Turn off all LEDs
+	//allLedsOff();
+	displayErrorColor = errorColors[digitalRead(hallPin) & 0x1];
+	for (uint32_t index = 0; index < numLeds - 1; index++) {
+		leds[index] = CRGB::Black;
+	}
+	leds[numLeds - 1] = displayErrorColor;
+	FastLED.show();
+	tdcInteruptVector = tdcIsrInit;
+}
+
+static void segmentTimerIsr() {
+	// This ISR fires for every segment position
+#ifdef DEBUG_MODE
+	lastSegment = currentDisplaySegment;
+	segmentTimerIsrFire = true;
+#endif  // DEBUG_MODE
+
+	updateLeds();	// Set LEDs per currentDisplaySegment
+	if (++currentDisplaySegment >= currentNumSegments) {
+		currentDisplaySegment = 0;
+	}
+	if (currentDisplaySegment == currentTdcDisplaySegment) {
+		// Shut down PIT since tdcDisplaySegment is displayed by tdcISR()
+		// Wait for tdcISR() to re-enable
+		segmentTimer->TCTRL = 0;
+		segmentTimer->TFLG = 1;
+	}
+}
+
+static void ledOffISR() {
+	// Shut off LEDS a few uS after lit by segment timer
+	ledOnTimer->TCTRL = 0;
+	ledOnTimer->TFLG = 1;
+	allLedsOff();
+}
+
+static void dummy_funct() {
+}
+
+void pit0_isr() {
+	PIT_TFLG0 = 1;
+	funct_table[0]();
+}
+
+void pit1_isr() {
+	PIT_TFLG1 = 1;
+	funct_table[1]();
+}
+
+void pit2_isr() {
+	PIT_TFLG2 = 1;
+	funct_table[2]();
+}
+
+void pit3_isr() {
+	PIT_TFLG3 = 1;
+	funct_table[3]();
+}
+
+#ifdef DEBUG_MODE
+void TeensyPOV::debugPrint() {
+	uint32_t localLast;
+	if (missedSegment) {
+		localLast = lastSegment;
+		missedSegment = false;
+		Serial.print("Missed Segment = ");
+		Serial.println(localLast);
+	}
+
+	uint8_t localTdcIsrFire, localGoodRpmCount;
+	uint32_t localSegmentLoadValue;
+	int16_t localCurrentDisplaySegment;
+
+	if (tdcIsrFire) {
+		noInterrupts()
+		;
+		localTdcIsrFire = tdcIsrFire;
+		localGoodRpmCount = goodRpmCount;
+		localSegmentLoadValue = segmentTimer->LDVAL;
+		tdcIsrFire = 0;
+		interrupts()
+		;
+
+		Serial.print("TDC ISR Fired, ");
+		if (localTdcIsrFire == 1) {
+			Serial.print("Displayed Segment: ");
+			Serial.print(currentTdcDisplaySegment);
+			Serial.print(", New Segment Counter Load Value: ");
+			Serial.println(localSegmentLoadValue);
+		} else {
+			Serial.print("Incremented goodRpmCount to: ");
+			Serial.println(localGoodRpmCount);
+		}
+		Serial.println();
+	}
+
+	if (rpmTimerIsrFire) {
+		noInterrupts()
+		;
+		rpmTimerIsrFire = false;
+		interrupts()
+		;
+		Serial.println("RPM Timer ISR Fired, All LEDs Off, goodRpmCount reset");
+		Serial.println();
+	}
+
+	if (segmentTimerIsrFire) {
+		noInterrupts()
+		;
+		segmentTimerIsrFire = false;
+		localCurrentDisplaySegment = currentDisplaySegment;
+		interrupts()
+		;
+		localCurrentDisplaySegment--;
+		if (localCurrentDisplaySegment < 0) {
+			localCurrentDisplaySegment = currentNumSegments - 1;
+		}
+		Serial.print("Segment Timer ISR Fired, Displayed Segment: ");
+		Serial.println(localCurrentDisplaySegment);
+		Serial.println();
+	}
+}
+#endif  // DEBUG_MODE
