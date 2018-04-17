@@ -52,8 +52,8 @@ private:
 	uint32_t rotationPeriod = 0, rotationTimer = 0;
 	int16_t rotationIncrement = 0;
 	uint16_t tdcSegment = 0;
-	const uint32_t *palette = nullptr;
 	uint8_t idNum;
+	bool expired = false;
 
 	static uint8_t numPov;
 	static uint8_t currentActivePov;
@@ -63,14 +63,14 @@ public:
 	void load(const LedArrayStruct *);
 	void load(const LedArrayStruct *, const DisplayStringSpec *, uint8_t);
 	void load(const DisplayStringSpec *, uint8_t);
+	void load();
 	void activate(bool = true);
 	void setDisplay(uint16_t, uint8_t, uint16_t, const uint32_t *);
 	void setTiming(uint32_t, uint32_t, int16_t);
 	bool update(void);
 	static bool povSetup(uint8_t, CRGB *, uint8_t);
 	static bool rpmGood(void);
-	static void loadPalette(const uint32_t *);
-	static uint32_t getLastRPMCount(void);
+	static uint32_t getLastRotationCount(void);
 	static void setLed(uint16_t, uint16_t, uint32_t);
 #ifdef DEBUG_MODE
 	static void debugPrint(void);

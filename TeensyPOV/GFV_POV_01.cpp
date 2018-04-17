@@ -1,5 +1,7 @@
 #include "GFV_POV_01.h"
 
+void loadCardioid(void);
+
 const uint8_t clockPin = 13;
 const uint8_t dataPin = 11;
 const uint8_t hallPin = 3;
@@ -9,11 +11,11 @@ CRGB leds[numLeds];
 const uint32_t palette[] = { CRGB::Black, CRGB::Fuchsia, CRGB::Red,
 		CRGB::Yellow, CRGB::Green, CRGB::Cyan, CRGB::Blue, CRGB::Purple };
 
-TeensyPOV display[4];
+TeensyPOV display[5];
 
 char charBuffer[10];
 
-const DisplayStringSpec stringArray_0[] = { "DINY", TOP, 35, 3, 7, false };
+const DisplayStringSpec stringArray_0[] = { " DINY ", TOP, 35, 6, 7, false };
 const uint8_t numStrings_0 = sizeof(stringArray_0) / sizeof(DisplayStringSpec);
 
 const DisplayStringSpec stringArray_1[] = { { "GREGORY", TOP, 35, 6, 0, false },
@@ -42,7 +44,7 @@ void setup() {
 	TeensyPOV::povSetup(hallPin, leds, numLeds);
 
 	//display[0].load(&faceStruct, stringArray_0, numStrings_0);
-	display[0].load(&faceStruct);
+	display[0].load(&faceStruct, stringArray_0, numStrings_0);
 	display[0].setTiming(5000, 0, 0);
 
 	display[1].setDisplay(128, 3, 0, palette);
@@ -57,6 +59,10 @@ void setup() {
 	display[3].load(stringArray_3, numStrings_3);
 	display[3].setTiming(5000, 0, 0);
 
+	display[4].setDisplay(128, 3, 0, palette);
+	display[4].load();
+	display[4].setTiming(5000, 0, 0);
+
 	while (!TeensyPOV::rpmGood()) {
 	}
 
@@ -65,9 +71,10 @@ void setup() {
 
 void loop() {
 
-	static const uint32_t rpmConversion = 2880000000UL;
+	//static const uint32_t rpmConversion = 2880000000UL;
+	static const uint32_t rpmConversion = F_BUS * 60UL;
 	static const uint32_t rpmUpdate = 50;
-	static uint8_t numDisplays = 4, currentDisplay = 0;
+	static uint8_t numDisplays = 5, currentDisplay = 0;
 	static uint32_t updateTimer;
 	int rpm;
 
@@ -76,12 +83,15 @@ void loop() {
 		currentDisplay++;
 		currentDisplay %= numDisplays;
 		display[currentDisplay].activate();
+		if (currentDisplay == 4) {
+			loadCardioid();
+		}
 	}
 
 	if (currentDisplay == 3) {
 		if (millis() - updateTimer >= rpmUpdate) {
 			updateTimer += rpmUpdate;
-			rpm = rpmConversion / TeensyPOV::getLastRPMCount();
+			rpm = rpmConversion / TeensyPOV::getLastRotationCount();
 			itoa(rpm, charBuffer, 10);
 			display[3].activate(false);
 		}
@@ -91,4 +101,32 @@ void loop() {
 	TeensyPOV::debugPrint();
 #endif
 
+}
+
+void loadCardioid() {
+	const float twicePi = 2.0 * 3.14159;
+	const float halfPi = 3.14159 / 2.0;
+	const float amplitude = numLeds / 2.0;
+	float angle, radius;
+	uint8_t pixel, color;
+	const uint16_t numSegments = 128;
+	uint16_t segment;
+	uint16_t reverseSegment;
+	for (segment = 0; segment < numSegments; segment++) {
+		/*
+		reverseSegment = numSegments - segment + segment / 4;
+		if (reverseSegment >= numSegments) {
+			reverseSegment -= numSegments;
+		}
+		 angle = (float) reverseSegment / (numSegments);
+		angle *= twicePi;
+		 */
+		angle = -(float) segment / numSegments;
+		angle *= twicePi;
+		angle += halfPi;
+		radius = amplitude * (1 - cos(angle));
+		pixel = radius;
+		color = segment % 7 + 1;
+		TeensyPOV::setLed(segment, pixel, color);
+	}
 }

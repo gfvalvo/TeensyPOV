@@ -21,7 +21,7 @@ static void loadColors(const uint32_t *);
 static void setParameters(uint16_t, uint8_t, uint16_t);
 static void loadString(const char *, TextPosition, uint8_t, uint8_t, uint8_t,
 		bool);
-static void setPixel(uint16_t, uint16_t, uint32_t, volatile uint32_t *);
+static void setPixel(uint16_t, uint16_t, uint32_t);
 static uint16_t virtualToPhysicalSegment(int16_t);
 
 #ifndef SIMULATE_RPM
@@ -82,10 +82,22 @@ uint8_t TeensyPOV::numPov = 0;
 uint8_t TeensyPOV::currentActivePov = 0;
 
 TeensyPOV::TeensyPOV() {
+	/*
+	 * Constructor
+	 */
 	idNum = ++numPov;
 }
 
 void TeensyPOV::load(const LedArrayStruct *pattern) {
+	/*
+	 * Load a TeensyPOV object with a bit pattern image
+	 * Parameters:
+	 * 		LedArrayStruct *pattern -- Pointer to the image structure.
+	 * 			The struct pointed to must be static or global.
+	 *
+	 * Returns:
+	 * 		N/A
+	 */
 	image = pattern;
 	numSegments = pattern->rows;
 	numColorBits = pattern->numColorBits;
@@ -93,10 +105,30 @@ void TeensyPOV::load(const LedArrayStruct *pattern) {
 	tdcSegment = pattern->tdcDisplaySegment;
 	numStrings = 0;
 	strings = nullptr;
+
+	displayDuration = 0;
+	durationTimer = 0;
+	rotationPeriod = 0;
+	rotationTimer = 0;
+	rotationIncrement = 0;
 }
 
 void TeensyPOV::load(const LedArrayStruct *pattern,
 		const DisplayStringSpec *strArray, uint8_t n) {
+	/*
+	 * Load a TeensyPOV object with a bit pattern image and text strings
+	 * Parameters:
+	 * 		LedArrayStruct *pattern -- Pointer to the image structure
+	 * 			The struct pointed to must be static or global.
+	 *
+	 * 		DisplayStringSpec *strArray -- Pointer to an array of DisplayStringSpec structures
+	 * 			The array pointed to must be static or global.
+	 *
+	 * 		uint8_t n -- Number of DisplayStringSpec structures in the array
+	 *
+	 * Returns:
+	 * 		N/A
+	 */
 	image = pattern;
 	numSegments = pattern->rows;
 	numColorBits = pattern->numColorBits;
@@ -104,26 +136,129 @@ void TeensyPOV::load(const LedArrayStruct *pattern,
 	tdcSegment = pattern->tdcDisplaySegment;
 	strings = strArray;
 	numStrings = n;
+
+	displayDuration = 0;
+	durationTimer = 0;
+	rotationPeriod = 0;
+	rotationTimer = 0;
+	rotationIncrement = 0;
 }
 
 void TeensyPOV::load(const DisplayStringSpec *strArray, uint8_t n) {
+	/*
+	 * Load a TeensyPOV object with text strings
+	 * Parameters:
+	 * 		DisplayStringSpec *strArray -- Pointer to an array of DisplayStringSpec structures
+	 * 			The array pointed to must be static or global.
+	 *
+	 * 		uint8_t n -- Number of DisplayStringSpec structures in the array
+	 *
+	 * Returns:
+	 * 		N/A
+	 */
 	strings = strArray;
 	numStrings = n;
+	tdcSegment = 0;
 	image = nullptr;
+
+	displayDuration = 0;
+	durationTimer = 0;
+	rotationPeriod = 0;
+	rotationTimer = 0;
+	rotationIncrement = 0;
+}
+
+void TeensyPOV::load() {
+	/*
+	 * Load an empty TeensyPOV object. Would be used if no bitmap image or text is desired.
+	 * Pixels would be set by the main program using the setLed() method.
+	 * Parameters:
+	 * 	N/A
+	 *
+	 * Returns:
+	 *	N/A
+	 *
+	 */
+	strings = nullptr;
+	numStrings = 0;
+	tdcSegment = 0;
+	image = nullptr;
+	displayDuration = 0;
+	durationTimer = 0;
+	rotationPeriod = 0;
+	rotationTimer = 0;
+	rotationIncrement = 0;
+}
+
+void TeensyPOV::setDisplay(uint16_t seg, uint8_t cBits, uint16_t tdc,
+		const uint32_t *colors) {
+	/*
+	 * Load the POV parameters for a TeensyPOV object that does not contain a bitmap image (i.e. a LedArrayStruct).
+	 * Call this function after load() and before activate().
+	 *  Parameters:
+	 *  	uint16_t seg -- Number of POV segments to use (128 and 256 both work well)
+	 *
+	 *  	uint8_t cBits -- Number of color bits (1-6)
+	 *
+	 *  	uint16_t tdc -- Segment number to display when rotating blade hits Top Dead Center
+	 *
+	 *  	const uint32_t *colors -- Pointer to array of RGB colors. Array must have at
+	 *  		least 2 ^ cBits elements. The array pointed to must be static or global.
+	 *
+	 * Returns:
+	 * 	N/A
+	 */
+	numSegments = seg;
+	numColorBits = cBits;
+	tdcSegment = tdc;
+	colorPalette = colors;
+}
+
+void TeensyPOV::setTiming(uint32_t duration, uint32_t rotation,
+		int16_t tdcDelta) {
+	/*
+	 * Set timing for dynamic TeensyPOV objects. Optional, all values are set to their default values by the load() method.
+	 *
+	 * Parameters:
+	 * 	uint32_t duration -- Time (in milliseconds) before the object expires. Use zero (default) if object is permanent.
+	 *
+	 * 	uint32_t rotation -- Time (in milliseconds) between changes in the Top Dead Center segment, causes display to rotate.
+	 * 		Use zero (default)  for no rotation
+	 *
+	 * 	int16_t tdcDelta -- Adjustment to Top Dead Center segment every 'rotation' milliseconds. Use negative value for clockwise rotation and
+	 * 		positive value for anti-clockwise. Has no effect if 'rotation' is zero.
+	 *
+	 * Returns:
+	 * 	N/A
+	 *
+	 */
+	displayDuration = duration;
+	rotationPeriod = rotation;
+	rotationIncrement = tdcDelta;
 }
 
 void TeensyPOV::activate(bool startTiming) {
+	/*
+	 * Display a TeensyPOV object on the POV LEDs. Also used to refresh a currently active display after changing
+	 * text, bit image, palette, etc.
+	 * Parameters:
+	 * 		bool startTiming --
+	 *			true (default): Reset the Display Duration and Rotation Timers to current millis()
+	 *			false: Do not reset the timers, typically used for a refresh operation
+	 *
+	 * Returns:
+	 * 		N/A
+	 */
 	uint8_t index;
 	const DisplayStringSpec *strPtr;
+	if (currentActivePov != idNum) {
+		setParameters(numSegments, numColorBits, tdcSegment);
+	}
+
+	loadColors(colorPalette);
+
 	if (image) {
 		loadPattern(image);
-	} else {
-		if (numSegments != currentNumSegments
-				|| numColorBits != currentNumColorBits
-				|| tdcSegment != currentTdcDisplaySegment) {
-			setParameters(numSegments, numColorBits, tdcSegment);
-			loadColors(palette);
-		}
 	}
 
 	if (strings) {
@@ -132,49 +267,69 @@ void TeensyPOV::activate(bool startTiming) {
 			loadString(strPtr->characters, strPtr->position, strPtr->topRow,
 					strPtr->textColor, strPtr->backgroundColor, strPtr->invert);
 		}
-
 	}
 
 	currentActivePov = idNum;
 
 	if (startTiming) {
+		expired = false;
 		durationTimer = millis();
 		rotationTimer = millis();
 	}
 }
 
+void TeensyPOV::setLed(uint16_t segment, uint16_t led, uint32_t value) {
+	setPixel(segment, led, value);
+	/*
+	 * Set a LED directly on the display.
+	 * Parameters:
+	 * 	uint16_t segment -- Rotational segment of the LED, counted clockwise from Top Dead Center. Value between 0 and (Number of Segments)-1
+	 *
+	 * 	uint16_t led -- Radial position of the LED, 0 = innermost.
+	 *
+	 * 	uint32_t value -- Color of the LED expressed as index into current Palette.
+	 *
+	 * Returns:
+	 * 		N/A
+	 */
+}
+
+
 bool TeensyPOV::rpmGood() {
+	/*
+	 * Report if POV blade is spinning at sufficient rotational speed
+	 * Parameters:
+	 *			None
+	 *  Returns:
+	 * 			true - speed is good
+	 * 			false - otherwise
+	 */
 	return (tdcInteruptVector == tdcIsrActive);
 }
 
-uint32_t TeensyPOV::getLastRPMCount() {
+uint32_t TeensyPOV::getLastRotationCount() {
+	/*
+	 * Get duration of last POV blade rotation in units of PIT ticks.
+	 * On a Teensy 3.2 there are 48,000,000 PIT ticks per second.
+	 * This value can be used to compute the blade's rotational speed.
+	 *	Parameters:
+	 *			N/A
+	 *	Returns:
+	 * 			Count of PIT ticks (uint32_t)
+	 */
 	return rpmCycles - lastRpmTimerReading;
 }
 
-void TeensyPOV::loadPalette(const uint32_t *array) {
-	loadColors(array);
-}
-
-void TeensyPOV::setLed(uint16_t segment, uint16_t led, uint32_t value) {
-	setPixel(segment, led, value, &segmentArray[0][0]);
-}
-
-void TeensyPOV::setDisplay(uint16_t seg, uint8_t cBits, uint16_t tdc,
-		const uint32_t *colors) {
-	numSegments = seg;
-	numColorBits = cBits;
-	tdcSegment = tdc;
-	palette = colors;
-}
-
-void TeensyPOV::setTiming(uint32_t duration, uint32_t rotation,
-		int16_t tdcDelta) {
-	displayDuration = duration;
-	rotationPeriod = rotation;
-	rotationIncrement = tdcDelta;
-}
-
 bool TeensyPOV::update() {
+	/*
+	 * Determines if duration of TeensyPOV object has expired and performs specified rotation.
+	 *	Parameters:
+	 *		N/A
+	 *
+	 *	Returns:
+	 *		true -- if the object has expired.
+	 *		false -- otherwise.
+	 */
 	uint32_t currentMillis;
 	int16_t segment;
 
@@ -182,23 +337,41 @@ bool TeensyPOV::update() {
 	if (idNum != currentActivePov) {
 		return true;
 	}
+
+	if (expired) {
+		return true;
+	}
+
 	if (rotationPeriod > 0) {
 		if (currentMillis - rotationTimer >= rotationPeriod) {
 			rotationTimer += rotationPeriod;
 			segment = currentTdcDisplaySegment + rotationIncrement;
 			currentTdcDisplaySegment = virtualToPhysicalSegment(segment);
 		}
-
 	}
+
 	if (displayDuration > 0) {
 		if (currentMillis - durationTimer >= displayDuration) {
-			return true;
+			expired = true;
 		}
 	}
-	return false;
+	return expired;
 }
 
 bool TeensyPOV::povSetup(uint8_t hPin, CRGB *ledPtr, uint8_t num) {
+	/*
+	 * Initialize the POV setup.
+	 * Parameters:
+	 * 	uint8_t hPin -- Pin that the (active low) Hall Effect sensor is connected to.
+	 *
+	 * 	CRGB *ledPtr -- Pointer to the array of FastLED CRGB objects. Before calling this method, the CRBG objects should be registered
+	 * 		with FastLED using the FastLED.addLeds() method.
+	 *
+	 * 	uint8_t num -- Number of LEDs
+	 *
+	 * 	Returns:
+	 * 		true if num < maxNumLeds
+	 */
 	const uint8_t rpmTimerIndex = 0;
 	const uint8_t segmentTimerIndex = 1;
 	const uint8_t ledOnTimerIndex = 2;
@@ -282,26 +455,19 @@ bool TeensyPOV::povSetup(uint8_t hPin, CRGB *ledPtr, uint8_t num) {
 static void loadPattern(const LedArrayStruct *patternStruct) {
 	uint32_t row, column;
 
-	if (patternStruct->rows != currentNumSegments
-			|| patternStruct->numColorBits != currentNumColorBits
-			|| patternStruct->tdcDisplaySegment != currentTdcDisplaySegment) {
-		setParameters(patternStruct->rows, patternStruct->numColorBits,
-				patternStruct->tdcDisplaySegment);
-	}
-
 	for (row = 0; row < currentNumSegments; row++) {
 		for (column = 0; column < patternStruct->columns; column++) {
 			segmentArray[row][column] = *(patternStruct->array
 					+ row * patternStruct->columns + column);
 		}
 	}
-	loadColors(patternStruct->colors);
 }
 
 static void loadString(const char *string, TextPosition pos, uint8_t topLed,
 		uint8_t color, uint8_t background, bool invert) {
 	char charBuffer[maxTextChars + 1], *bufferPosition;
-	uint8_t padPosition, len, fontMask, ledBit;
+	uint8_t len, fontMask, ledBit;
+	//uint8_t padPosition;
 	uint8_t charMatrix[5];
 	int8_t bufferPositionDelta;
 	uint16_t currentMaxChars, stopLed, startLed, physicalSegment;
@@ -319,29 +485,35 @@ static void loadString(const char *string, TextPosition pos, uint8_t topLed,
 	stopLed = topLed;
 	startLed = stopLed - 6;
 
-	memset(charBuffer, ' ', maxTextChars);
-	charBuffer[maxTextChars] = '\0';
+	//memset(charBuffer, ' ', maxTextChars);
+	//charBuffer[maxTextChars] = '\0';
+	memset(charBuffer, '\0', maxTextChars);
+
 	currentMaxChars = currentNumSegments / (2 * 7);
 	len = strlen(string);
 	if (len > currentMaxChars) {
 		len = currentMaxChars;
 	}
-	padPosition = (currentMaxChars - len) / 2;
-	strncpy(charBuffer + padPosition, string, len);
+	//padPosition = (currentMaxChars - len) / 2;
+	//strncpy(charBuffer + padPosition, string, len);
+	strncpy(charBuffer, string, len);
 
 	switch (pos) {
 	case TOP:
 		virtualSegment = 3 * currentNumSegments / 4 + 1;
-		virtualSegment += (currentNumSegments / 2 - currentMaxChars * 7) / 2;
+		//virtualSegment += (currentNumSegments / 2 - currentMaxChars * 7) / 2;
+		virtualSegment += (currentNumSegments / 2 - len * 7) / 2;
 		bufferPosition = charBuffer;
 		bufferPositionDelta = 1;
 		break;
 
 	case BOTTOM:
 		virtualSegment = currentNumSegments / 4 + 1;
-		virtualSegment += (currentNumSegments / 2 - currentMaxChars * 7) / 2;
+		//virtualSegment += (currentNumSegments / 2 - currentMaxChars * 7) / 2;
+		virtualSegment += (currentNumSegments / 2 - len * 7) / 2;
 		if (invert) {
-			bufferPosition = charBuffer + currentMaxChars - 1;
+			//bufferPosition = charBuffer + currentMaxChars - 1;
+			bufferPosition = charBuffer + len - 1;
 			bufferPositionDelta = -1;
 		} else {
 			bufferPosition = charBuffer;
@@ -354,12 +526,12 @@ static void loadString(const char *string, TextPosition pos, uint8_t topLed,
 	}
 
 	physicalSegment = virtualToPhysicalSegment(virtualSegment);
-	for (charCounter = 0; charCounter < currentMaxChars; charCounter++) {
+	//for (charCounter = 0; charCounter < currentMaxChars; charCounter++) {
+	for (charCounter = 0; charCounter < len; charCounter++) {
 		getMatrix(*bufferPosition, charMatrix, invert);
 
 		for (pixelCounter = startLed; pixelCounter <= stopLed; pixelCounter++) {
-			setPixel(physicalSegment, pixelCounter, background,
-					&segmentArray[0][0]);
+			setPixel(physicalSegment, pixelCounter, background);
 		}
 		virtualSegment++;
 		physicalSegment = virtualToPhysicalSegment(virtualSegment);
@@ -375,11 +547,9 @@ static void loadString(const char *string, TextPosition pos, uint8_t topLed,
 				fontMask <<= 1;
 
 				if (ledBit == 1) {
-					setPixel(physicalSegment, pixelCounter, color,
-							&segmentArray[0][0]);
+					setPixel(physicalSegment, pixelCounter, color);
 				} else {
-					setPixel(physicalSegment, pixelCounter, background,
-							&segmentArray[0][0]);
+					setPixel(physicalSegment, pixelCounter, background);
 				}
 			}
 			virtualSegment++;
@@ -387,8 +557,7 @@ static void loadString(const char *string, TextPosition pos, uint8_t topLed,
 		}
 
 		for (pixelCounter = startLed; pixelCounter <= stopLed; pixelCounter++) {
-			setPixel(physicalSegment, pixelCounter, background,
-					&segmentArray[0][0]);
+			setPixel(physicalSegment, pixelCounter, background);
 		}
 		virtualSegment++;
 		physicalSegment = virtualToPhysicalSegment(virtualSegment);
@@ -481,10 +650,9 @@ static void updateLeds() {
 	ledOnTimer->TCTRL = 3;
 }
 
-static void setPixel(uint16_t segment, uint16_t pixel, uint32_t value,
-		volatile uint32_t *segmentArray) {
+static void setPixel(uint16_t segment, uint16_t pixel, uint32_t value) {
 	uint8_t pixelWord, pixelShift;
-	uint32_t pixelMask, offset;
+	uint32_t pixelMask;
 
 	pixelWord = pixel / pixelsPerWord;
 	pixelShift = (pixel % pixelsPerWord) * currentNumColorBits;
@@ -492,9 +660,11 @@ static void setPixel(uint16_t segment, uint16_t pixel, uint32_t value,
 	value <<= pixelShift;
 	value &= pixelMask;
 
-	offset = segment * maxColumns + pixelWord;
-	*(segmentArray + offset) &= (~pixelMask);
-	*(segmentArray + offset) |= value;
+	segmentArray[segment][pixelWord] &= (~pixelMask);
+	segmentArray[segment][pixelWord] |= value;
+	//offset = segment * maxColumns + pixelWord;
+	//*(segmentArray + offset) &= (~pixelMask);
+	//*(segmentArray + offset) |= value;
 }
 
 static void mainTdcISR() {
