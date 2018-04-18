@@ -54,6 +54,9 @@ private:
 	uint16_t tdcSegment = 0;
 	uint8_t idNum;
 	bool expired = false;
+	void (*activationCallback)() = nullptr;
+	void (*updateCallback)() = nullptr;
+	void (*expireCallback)() = nullptr;
 
 	static uint8_t numPov;
 	static uint8_t currentActivePov;
@@ -67,6 +70,9 @@ public:
 	void activate(bool = true);
 	void setDisplay(uint16_t, uint8_t, uint16_t, const uint32_t *);
 	void setTiming(uint32_t, uint32_t, int16_t);
+	void setActivationCallback(void (*)());
+	void setUpdateCallback(void (*)());
+	void setExpireCallback(void (*)());
 	bool update(void);
 	static bool povSetup(uint8_t, CRGB *, uint8_t);
 	static bool rpmGood(void);

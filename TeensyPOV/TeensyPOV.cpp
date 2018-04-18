@@ -111,6 +111,9 @@ void TeensyPOV::load(const LedArrayStruct *pattern) {
 	rotationPeriod = 0;
 	rotationTimer = 0;
 	rotationIncrement = 0;
+	activationCallback = nullptr;
+	updateCallback = nullptr;
+	expireCallback = nullptr;
 }
 
 void TeensyPOV::load(const LedArrayStruct *pattern,
@@ -142,6 +145,9 @@ void TeensyPOV::load(const LedArrayStruct *pattern,
 	rotationPeriod = 0;
 	rotationTimer = 0;
 	rotationIncrement = 0;
+	activationCallback = nullptr;
+	updateCallback = nullptr;
+	expireCallback = nullptr;
 }
 
 void TeensyPOV::load(const DisplayStringSpec *strArray, uint8_t n) {
@@ -166,6 +172,9 @@ void TeensyPOV::load(const DisplayStringSpec *strArray, uint8_t n) {
 	rotationPeriod = 0;
 	rotationTimer = 0;
 	rotationIncrement = 0;
+	activationCallback = nullptr;
+	updateCallback = nullptr;
+	expireCallback = nullptr;
 }
 
 void TeensyPOV::load() {
@@ -274,12 +283,26 @@ void TeensyPOV::activate(bool startTiming) {
 	if (startTiming) {
 		expired = false;
 		durationTimer = millis();
-		rotationTimer = millis();
+		rotationTimer = durationTimer;
+		if (activationCallback) {
+			activationCallback();
+		}
 	}
 }
 
+void TeensyPOV::setActivationCallback(void (*ptr)()) {
+	activationCallback = ptr;
+}
+
+void TeensyPOV::setUpdateCallback(void (*ptr)()) {
+	updateCallback = ptr;
+}
+
+void TeensyPOV::setExpireCallback(void (*ptr)()) {
+	expireCallback = ptr;
+}
+
 void TeensyPOV::setLed(uint16_t segment, uint16_t led, uint32_t value) {
-	setPixel(segment, led, value);
 	/*
 	 * Set a LED directly on the display.
 	 * Parameters:
@@ -292,8 +315,8 @@ void TeensyPOV::setLed(uint16_t segment, uint16_t led, uint32_t value) {
 	 * Returns:
 	 * 		N/A
 	 */
+	setPixel(segment, led, value);
 }
-
 
 bool TeensyPOV::rpmGood() {
 	/*
@@ -355,7 +378,19 @@ bool TeensyPOV::update() {
 			expired = true;
 		}
 	}
-	return expired;
+
+	if (expired) {
+		if (expireCallback) {
+			expireCallback();
+		}
+		return true;
+	}
+
+	if (updateCallback) {
+		updateCallback();
+	}
+
+	return false;
 }
 
 bool TeensyPOV::povSetup(uint8_t hPin, CRGB *ledPtr, uint8_t num) {
