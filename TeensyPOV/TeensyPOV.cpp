@@ -164,7 +164,7 @@ void TeensyPOV::load(const DisplayStringSpec *strArray, uint8_t n) {
 	 */
 	strings = strArray;
 	numStrings = n;
-	tdcSegment = 0;
+	//tdcSegment = 0;
 	image = nullptr;
 
 	displayDuration = 0;
@@ -190,13 +190,16 @@ void TeensyPOV::load() {
 	 */
 	strings = nullptr;
 	numStrings = 0;
-	tdcSegment = 0;
+	//tdcSegment = 0;
 	image = nullptr;
 	displayDuration = 0;
 	durationTimer = 0;
 	rotationPeriod = 0;
 	rotationTimer = 0;
 	rotationIncrement = 0;
+	activationCallback = nullptr;
+	updateCallback = nullptr;
+	expireCallback = nullptr;
 }
 
 void TeensyPOV::setDisplay(uint16_t seg, uint8_t cBits, uint16_t tdc,

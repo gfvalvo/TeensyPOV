@@ -1,19 +1,24 @@
 #include "GFV_POV_01.h"
 
-void loadCardioid(TeensyPOV *);
+void loadRose(TeensyPOV *);
+void loadLimacons(TeensyPOV *);
 void startRpmUpdateTimer(TeensyPOV *);
 void updateRpm(TeensyPOV *);
 
 const uint8_t clockPin = 13;
 const uint8_t dataPin = 11;
 const uint8_t hallPin = 3;
+const uint8_t numColorBits = 3;
+const uint8_t numDisplays = 6;
+const uint16_t segmentCount = 128;
+const uint16_t tdcSegment = 0;
 const uint32_t numLeds = NUM_LEDS;
 CRGB leds[numLeds];
 
 const uint32_t palette[] = { CRGB::Black, CRGB::Fuchsia, CRGB::Red,
 		CRGB::Yellow, CRGB::Green, CRGB::Cyan, CRGB::Blue, CRGB::Purple };
 
-TeensyPOV display[5];
+TeensyPOV display[numDisplays];
 
 char charBuffer[10];
 
@@ -50,24 +55,29 @@ void setup() {
 	display[0].load(&faceStruct, stringArray_0, numStrings_0);
 	display[0].setTiming(5000, 0, 0);
 
-	display[1].setDisplay(128, 3, 0, palette);
 	display[1].load(stringArray_1, numStrings_1);
+	display[1].setDisplay(segmentCount, numColorBits, tdcSegment, palette);
 	display[1].setTiming(5000, 0, 0);
 
-	display[2].setDisplay(128, 3, 0, palette);
 	display[2].load(stringArray_2, numStrings_2);
+	display[2].setDisplay(segmentCount, numColorBits, tdcSegment, palette);
 	display[2].setTiming(5000, 20, -1);
 
-	display[3].setDisplay(128, 3, 0, palette);
 	display[3].load(stringArray_3, numStrings_3);
+	display[3].setDisplay(segmentCount, numColorBits, tdcSegment, palette);
 	display[3].setTiming(5000, 0, 0);
 	display[3].setActivationCallback(startRpmUpdateTimer);
 	display[3].setUpdateCallback(updateRpm);
 
-	display[4].setDisplay(128, 3, 0, palette);
 	display[4].load();
+	display[4].setDisplay(segmentCount, numColorBits, tdcSegment, palette);
 	display[4].setTiming(7000, 30, 1);
-	display[4].setActivationCallback(loadCardioid);
+	display[4].setActivationCallback(loadLimacons);
+
+	display[5].load();
+	display[5].setDisplay(segmentCount, numColorBits, tdcSegment, palette);
+	display[5].setTiming(7000, 30, -1);
+	display[5].setActivationCallback(loadRose);
 
 	while (!TeensyPOV::rpmGood()) {
 	}
@@ -76,8 +86,7 @@ void setup() {
 }
 
 void loop() {
-	static uint8_t numDisplays = 5, currentDisplay = 0;
-
+	static uint8_t currentDisplay = 0;
 
 	if (display[currentDisplay].update()) {
 		currentDisplay++;
@@ -95,22 +104,61 @@ void loop() {
 
 }
 
-void loadCardioid(TeensyPOV *ptr) {
+void loadLimacons(TeensyPOV *ptr) {
+	const uint8_t colorSelect = (1 << numColorBits) - 1;
 	const float twicePi = 2.0 * 3.14159;
 	const float halfPi = 3.14159 / 2.0;
-	const float amplitude = numLeds / 2.0;
+	const float shapeFactor = 2.0;
+	const float amplitude = numLeds / (shapeFactor + 1.0) - 1;
 	float angle, radius;
 	uint8_t pixel, color;
-	const uint16_t numSegments = 128;
-	uint16_t segment;
-	for (segment = 0; segment < numSegments; segment++) {
-		angle = -(float) segment / numSegments;
+	uint16_t segment, displaySegment;
+	for (segment = 0; segment < segmentCount; segment++) {
+		angle = -(float) segment / segmentCount;
 		angle *= twicePi;
 		angle += halfPi;
-		radius = amplitude * (1 - cos(angle));
-		pixel = radius;
-		color = segment % 7 + 1;
-		TeensyPOV::setLed(segment, pixel, color);
+		radius = amplitude * (1.0 - shapeFactor * cos(angle));
+		if (radius > 0) {
+			displaySegment = segment;
+		} else {
+			displaySegment = segment + segmentCount / 2;
+			if (displaySegment >= segmentCount) {
+				displaySegment -= segmentCount;
+			}
+			radius = -radius;
+		}
+		pixel = radius + 0.5;
+		color = segment % colorSelect + 1;
+		TeensyPOV::setLed(displaySegment, pixel, color);
+	}
+}
+
+void loadRose(TeensyPOV *ptr) {
+	const uint8_t colorSelect = (1 << numColorBits) - 1;
+	const float twicePi = 2.0 * 3.14159;
+	const float halfPi = 3.14159 / 2.0;
+	const float shapeFactor = 4.0;
+	const float amplitude = numLeds - 1;
+	float angle, radius;
+	uint8_t pixel, color;
+	uint16_t segment, displaySegment;
+	for (segment = 0; segment < segmentCount; segment++) {
+		angle = -(float) segment / segmentCount;
+		angle *= twicePi;
+		angle += halfPi;
+		radius = amplitude * cos(shapeFactor * angle);
+		if (radius > 0) {
+			displaySegment = segment;
+		} else {
+			displaySegment = segment + segmentCount / 2;
+			if (displaySegment >= segmentCount) {
+				displaySegment -= segmentCount;
+			}
+			radius = -radius;
+		}
+		pixel = radius + 0.5;
+		color = segment % colorSelect + 1;
+		TeensyPOV::setLed(displaySegment, pixel, color);
 	}
 }
 
