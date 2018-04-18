@@ -246,18 +246,38 @@ void TeensyPOV::setTiming(uint32_t duration, uint32_t rotation,
 	rotationIncrement = tdcDelta;
 }
 
-void TeensyPOV::activate(bool startTiming) {
+void TeensyPOV::activate() {
 	/*
-	 * Display a TeensyPOV object on the POV LEDs. Also used to refresh a currently active display after changing
+	 * Display a TeensyPOV object on the POV LEDs.
+	 * Resets the duration and rotation timers
+	 *  Also used to refresh a currently active display after changing
 	 * text, bit image, palette, etc.
 	 * Parameters:
-	 * 		bool startTiming --
-	 *			true (default): Reset the Display Duration and Rotation Timers to current millis()
-	 *			false: Do not reset the timers, typically used for a refresh operation
+	 * 		N/A
 	 *
 	 * Returns:
 	 * 		N/A
 	 */
+	loadPovStructures(true);
+}
+
+void TeensyPOV::refresh() {
+	/*
+	 * Refresh the TeensyPOV object on the POV LEDs after changing text, bit image, palette, etc.
+	 * Does not resets the duration and rotation timers
+	 * Parameters:
+	 * 		N/A
+	 *
+	 * Returns:
+	 * 		N/A
+	 */
+	if (currentActivePov != idNum) {
+		return;
+	}
+	loadPovStructures(false);
+}
+
+void TeensyPOV::loadPovStructures(bool startTiming) {
 	uint8_t index;
 	const DisplayStringSpec *strPtr;
 	if (currentActivePov != idNum) {
@@ -285,20 +305,20 @@ void TeensyPOV::activate(bool startTiming) {
 		durationTimer = millis();
 		rotationTimer = durationTimer;
 		if (activationCallback) {
-			activationCallback();
+			activationCallback(this);
 		}
 	}
 }
 
-void TeensyPOV::setActivationCallback(void (*ptr)()) {
+void TeensyPOV::setActivationCallback(void (*ptr)(TeensyPOV *)) {
 	activationCallback = ptr;
 }
 
-void TeensyPOV::setUpdateCallback(void (*ptr)()) {
+void TeensyPOV::setUpdateCallback(void (*ptr)(TeensyPOV *)) {
 	updateCallback = ptr;
 }
 
-void TeensyPOV::setExpireCallback(void (*ptr)()) {
+void TeensyPOV::setExpireCallback(void (*ptr)(TeensyPOV *)) {
 	expireCallback = ptr;
 }
 
@@ -375,19 +395,16 @@ bool TeensyPOV::update() {
 
 	if (displayDuration > 0) {
 		if (currentMillis - durationTimer >= displayDuration) {
-			expired = true;
+			if (expireCallback) {
+				expireCallback(this);
+			}
+			return true;
 		}
 	}
 
-	if (expired) {
-		if (expireCallback) {
-			expireCallback();
-		}
-		return true;
-	}
 
 	if (updateCallback) {
-		updateCallback();
+		updateCallback(this);
 	}
 
 	return false;

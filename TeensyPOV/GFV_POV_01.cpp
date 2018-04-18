@@ -1,8 +1,8 @@
 #include "GFV_POV_01.h"
 
-void loadCardioid(void);
-void startRpmUpdateTimer(void);
-void updateRpm(void);
+void loadCardioid(TeensyPOV *);
+void startRpmUpdateTimer(TeensyPOV *);
+void updateRpm(TeensyPOV *);
 
 const uint8_t clockPin = 13;
 const uint8_t dataPin = 11;
@@ -17,7 +17,8 @@ TeensyPOV display[5];
 
 char charBuffer[10];
 
-const DisplayStringSpec stringArray_0[] = { "DINY", BOTTOM, 35, 6, 7, true };
+const DisplayStringSpec stringArray_0[] =
+		{ "   DINY  ", BOTTOM, 35, 6, 7, true };
 const uint8_t numStrings_0 = sizeof(stringArray_0) / sizeof(DisplayStringSpec);
 
 const DisplayStringSpec stringArray_1[] = { { "GREGORY", TOP, 35, 6, 0, false },
@@ -94,7 +95,7 @@ void loop() {
 
 }
 
-void loadCardioid() {
+void loadCardioid(TeensyPOV *ptr) {
 	const float twicePi = 2.0 * 3.14159;
 	const float halfPi = 3.14159 / 2.0;
 	const float amplitude = numLeds / 2.0;
@@ -116,17 +117,17 @@ void loadCardioid() {
 uint32_t rpmUpdateTimer;
 const uint32_t rpmUpdate = 50;
 
-void startRpmUpdateTimer() {
+void startRpmUpdateTimer(TeensyPOV *ptr) {
 	rpmUpdateTimer = millis() - rpmUpdate;
 }
 
-void updateRpm() {
+void updateRpm(TeensyPOV *ptr) {
 	static const uint32_t rpmConversion = F_BUS * 60UL;
 	int rpm;
 	if (millis() - rpmUpdateTimer >= rpmUpdate) {
 		rpmUpdateTimer += rpmUpdate;
 		rpm = rpmConversion / TeensyPOV::getLastRotationCount();
 		itoa(rpm, charBuffer, 10);
-		display[3].activate(false);
+		ptr->refresh();
 	}
 }

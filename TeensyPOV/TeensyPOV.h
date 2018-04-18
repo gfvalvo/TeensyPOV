@@ -54,9 +54,10 @@ private:
 	uint16_t tdcSegment = 0;
 	uint8_t idNum;
 	bool expired = false;
-	void (*activationCallback)() = nullptr;
-	void (*updateCallback)() = nullptr;
-	void (*expireCallback)() = nullptr;
+	void loadPovStructures(bool);
+	void (*activationCallback)(TeensyPOV *) = nullptr;
+	void (*updateCallback)(TeensyPOV *) = nullptr;
+	void (*expireCallback)(TeensyPOV *) = nullptr;
 
 	static uint8_t numPov;
 	static uint8_t currentActivePov;
@@ -67,12 +68,13 @@ public:
 	void load(const LedArrayStruct *, const DisplayStringSpec *, uint8_t);
 	void load(const DisplayStringSpec *, uint8_t);
 	void load();
-	void activate(bool = true);
+	void activate();
+	void refresh();
 	void setDisplay(uint16_t, uint8_t, uint16_t, const uint32_t *);
 	void setTiming(uint32_t, uint32_t, int16_t);
-	void setActivationCallback(void (*)());
-	void setUpdateCallback(void (*)());
-	void setExpireCallback(void (*)());
+	void setActivationCallback(void (*)(TeensyPOV *));
+	void setUpdateCallback(void (*)(TeensyPOV *));
+	void setExpireCallback(void (*)(TeensyPOV *));
 	bool update(void);
 	static bool povSetup(uint8_t, CRGB *, uint8_t);
 	static bool rpmGood(void);
