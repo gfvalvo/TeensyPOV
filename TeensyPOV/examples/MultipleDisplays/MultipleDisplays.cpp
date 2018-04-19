@@ -61,7 +61,7 @@ void setup() {
 	TeensyPOV::povSetup(hallPin, leds, numLeds);
 
 	//display[0].load(&faceStruct, stringArray_0, numStrings_0);
-	display[0].load(&faceStruct, stringArray_0, numStrings_0);
+	display[0].load(&pictureStruct, stringArray_0, numStrings_0);
 	display[0].setTiming(5000, 0, 0);
 	display[0].setExpireCallback(switchDisplay);
 
@@ -96,7 +96,7 @@ void setup() {
 	display[5].load();
 	display[5].setDisplay(singleDensitySegmentCount, numColorBits, tdcSegment,
 			palette);
-	display[5].setTiming(7000, 60, -1);
+	display[5].setTiming(7000, 75, -1);
 	display[5].setActivationCallback(loadRose);
 	display[5].setExpireCallback(switchDisplay);
 

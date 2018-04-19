@@ -10,7 +10,7 @@ static const uint32_t numSegments = 256;
 static const uint32_t numColorBits = 4;
 static const uint32_t tdcDisplaySegment = 0;
 
-static const uint32_t faceArray[][5] = { { 0x89AAAAA9, 0x0889A9A9, 0x88888880,
+static const uint32_t pictureArray[][5] = { { 0x89AAAAA9, 0x0889A9A9, 0x88888880,
 		0x00088008, 0x0000BA98 }, { 0x89AAAAA9, 0x0889A9A9, 0x88088880,
 		0x80000888, 0x0000BA98 }, { 0x89AAAAA9, 0x808999A9, 0x88888008,
 		0x80880888, 0x0000B998 }, { 0x89AAAAA9, 0x08899999, 0x88808000,
@@ -273,7 +273,7 @@ static const uint32_t colorTable[] = { 0x00FFFFFF, 0x00FFFF00, 0x00FF00FF,
 		0x00FEDA8E, 0x00FDB669, 0x00FB8C44, 0x007E5034, 0x00E35B20, 0x00A02A09,
 		0x004A1308 };
 
-const LedArrayStruct faceStruct = { &faceArray[0][0], &colorTable[0],
+const LedArrayStruct pictureStruct = { &pictureArray[0][0], &colorTable[0],
 		numColorBits, numSegments, 5, tdcDisplaySegment };
 
 
