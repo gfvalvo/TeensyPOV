@@ -314,14 +314,29 @@ void TeensyPOV::loadPovStructures(bool startTiming) {
 }
 
 void TeensyPOV::setActivationCallback(void (*ptr)(TeensyPOV *)) {
+	/* Set optional callback function to be called when a TeensyPOV object is activated.
+	 *  Parameters:
+	 *  	void (*ptr)(TeensyPOV *) - pointer to the function to be called. The function must take as an argument a pointer to the
+	 *  		TeensyPOV object that was activated and return void
+	 */
 	activationCallback = ptr;
 }
 
 void TeensyPOV::setUpdateCallback(void (*ptr)(TeensyPOV *)) {
+	/* Set optional callback function to be called when a TeensyPOV object is updated.
+	 *  Parameters:
+	 *  	void (*ptr)(TeensyPOV *) - pointer to the function to be called. The function must take as an argument a pointer to the
+	 *  		TeensyPOV object that was updated and return void
+	 */
 	updateCallback = ptr;
 }
 
 void TeensyPOV::setExpireCallback(void (*ptr)(TeensyPOV *)) {
+	/* Set optional callback function to be called when a TeensyPOV object expires.
+	 *  Parameters:
+	 *  	void (*ptr)(TeensyPOV *) - pointer to the function to be called. The function must take as an argument a pointer to the
+	 *  		TeensyPOV object that expired and return void
+	 */
 	expireCallback = ptr;
 }
 

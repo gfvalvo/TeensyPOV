@@ -1,5 +1,6 @@
 #include "GFV_POV_01.h"
 
+void switchDisplay(TeensyPOV *);
 void loadRose(TeensyPOV *);
 void loadLimacons(TeensyPOV *);
 void startRpmUpdateTimer(TeensyPOV *);
@@ -10,10 +11,12 @@ const uint8_t dataPin = 11;
 const uint8_t hallPin = 3;
 const uint8_t numColorBits = 3;
 const uint8_t numDisplays = 6;
-const uint16_t segmentCount = 128;
+const uint16_t singleDensitySegmentCount = 128;
+const uint16_t doubleDensitySegmentCount = 256;
 const uint16_t tdcSegment = 0;
 const uint32_t numLeds = NUM_LEDS;
 CRGB leds[numLeds];
+uint8_t currentDisplay = 0;
 
 const uint32_t palette[] = { CRGB::Black, CRGB::Fuchsia, CRGB::Red,
 		CRGB::Yellow, CRGB::Green, CRGB::Cyan, CRGB::Blue, CRGB::Purple };
@@ -26,9 +29,15 @@ const DisplayStringSpec stringArray_0[] =
 		{ "   DINY  ", BOTTOM, 35, 6, 7, true };
 const uint8_t numStrings_0 = sizeof(stringArray_0) / sizeof(DisplayStringSpec);
 
-const DisplayStringSpec stringArray_1[] = { { "GREGORY", TOP, 35, 6, 0, false },
-		{ "VALVO", TOP, 25, 2, 0, false }, { "DIANE", BOTTOM, 25, 5, 0, true },
-		{ "VALVO", BOTTOM, 35, 1, 0, true } };
+/*
+ const DisplayStringSpec stringArray_1[] = { { "GREGORY", TOP, 35, 6, 0, false },
+ { "VALVO", TOP, 25, 2, 0, false }, { "DIANE", BOTTOM, 25, 5, 0, true },
+ { "VALVO", BOTTOM, 35, 1, 0, true } };
+ const uint8_t numStrings_1 = sizeof(stringArray_1) / sizeof(DisplayStringSpec);
+ */
+const DisplayStringSpec stringArray_1[] = { { "Eat at Joes", TOP, 35, 6, 0,
+		false }, { "Restaurant", TOP, 25, 2, 0, false }, { "Great Food", BOTTOM,
+		25, 5, 0, true }, { "Fair Prices", BOTTOM, 35, 1, 0, true } };
 const uint8_t numStrings_1 = sizeof(stringArray_1) / sizeof(DisplayStringSpec);
 
 const DisplayStringSpec stringArray_2[] = { { "JESSICA", TOP, 35, 2, 0, false },
@@ -54,54 +63,70 @@ void setup() {
 	//display[0].load(&faceStruct, stringArray_0, numStrings_0);
 	display[0].load(&faceStruct, stringArray_0, numStrings_0);
 	display[0].setTiming(5000, 0, 0);
+	display[0].setExpireCallback(switchDisplay);
 
 	display[1].load(stringArray_1, numStrings_1);
-	display[1].setDisplay(segmentCount, numColorBits, tdcSegment, palette);
+	//display[1].setDisplay(segmentCount, numColorBits, tdcSegment, palette);
+	display[1].setDisplay(doubleDensitySegmentCount, numColorBits, tdcSegment,
+			palette);
 	display[1].setTiming(5000, 0, 0);
+	display[1].setExpireCallback(switchDisplay);
 
 	display[2].load(stringArray_2, numStrings_2);
-	display[2].setDisplay(segmentCount, numColorBits, tdcSegment, palette);
+	display[2].setDisplay(singleDensitySegmentCount, numColorBits, tdcSegment,
+			palette);
 	display[2].setTiming(5000, 20, -1);
+	display[2].setExpireCallback(switchDisplay);
 
 	display[3].load(stringArray_3, numStrings_3);
-	display[3].setDisplay(segmentCount, numColorBits, tdcSegment, palette);
+	display[3].setDisplay(singleDensitySegmentCount, numColorBits, tdcSegment,
+			palette);
 	display[3].setTiming(5000, 0, 0);
 	display[3].setActivationCallback(startRpmUpdateTimer);
 	display[3].setUpdateCallback(updateRpm);
+	display[3].setExpireCallback(switchDisplay);
 
 	display[4].load();
-	display[4].setDisplay(segmentCount, numColorBits, tdcSegment, palette);
+	display[4].setDisplay(singleDensitySegmentCount, numColorBits, tdcSegment,
+			palette);
 	display[4].setTiming(7000, 30, 1);
 	display[4].setActivationCallback(loadLimacons);
+	display[4].setExpireCallback(switchDisplay);
 
 	display[5].load();
-	display[5].setDisplay(segmentCount, numColorBits, tdcSegment, palette);
-	display[5].setTiming(7000, 30, -1);
+	display[5].setDisplay(singleDensitySegmentCount, numColorBits, tdcSegment,
+			palette);
+	display[5].setTiming(7000, 60, -1);
 	display[5].setActivationCallback(loadRose);
+	display[5].setExpireCallback(switchDisplay);
 
 	while (!TeensyPOV::rpmGood()) {
 	}
 
-	display[0].activate();
+	display[currentDisplay].activate();
 }
 
 void loop() {
-	static uint8_t currentDisplay = 0;
 
+	display[currentDisplay].update();
+	/*
 	if (display[currentDisplay].update()) {
 		currentDisplay++;
 		currentDisplay %= numDisplays;
 		display[currentDisplay].activate();
 	}
-
-	if (currentDisplay == 3) {
-
-	}
+	 */
 
 #ifdef DEBUG_MODE
 	TeensyPOV::debugPrint();
 #endif
 
+}
+
+void switchDisplay(TeensyPOV *ptr) {
+	currentDisplay++;
+	currentDisplay %= numDisplays;
+	display[currentDisplay].activate();
 }
 
 void loadLimacons(TeensyPOV *ptr) {
@@ -113,17 +138,17 @@ void loadLimacons(TeensyPOV *ptr) {
 	float angle, radius;
 	uint8_t pixel, color;
 	uint16_t segment, displaySegment;
-	for (segment = 0; segment < segmentCount; segment++) {
-		angle = -(float) segment / segmentCount;
+	for (segment = 0; segment < singleDensitySegmentCount; segment++) {
+		angle = -(float) segment / singleDensitySegmentCount;
 		angle *= twicePi;
 		angle += halfPi;
 		radius = amplitude * (1.0 - shapeFactor * cos(angle));
 		if (radius > 0) {
 			displaySegment = segment;
 		} else {
-			displaySegment = segment + segmentCount / 2;
-			if (displaySegment >= segmentCount) {
-				displaySegment -= segmentCount;
+			displaySegment = segment + singleDensitySegmentCount / 2;
+			if (displaySegment >= singleDensitySegmentCount) {
+				displaySegment -= singleDensitySegmentCount;
 			}
 			radius = -radius;
 		}
@@ -142,17 +167,17 @@ void loadRose(TeensyPOV *ptr) {
 	float angle, radius;
 	uint8_t pixel, color;
 	uint16_t segment, displaySegment;
-	for (segment = 0; segment < segmentCount; segment++) {
-		angle = -(float) segment / segmentCount;
+	for (segment = 0; segment < singleDensitySegmentCount; segment++) {
+		angle = -(float) segment / singleDensitySegmentCount;
 		angle *= twicePi;
 		angle += halfPi;
 		radius = amplitude * cos(shapeFactor * angle);
 		if (radius > 0) {
 			displaySegment = segment;
 		} else {
-			displaySegment = segment + segmentCount / 2;
-			if (displaySegment >= segmentCount) {
-				displaySegment -= segmentCount;
+			displaySegment = segment + singleDensitySegmentCount / 2;
+			if (displaySegment >= singleDensitySegmentCount) {
+				displaySegment -= singleDensitySegmentCount;
 			}
 			radius = -radius;
 		}
