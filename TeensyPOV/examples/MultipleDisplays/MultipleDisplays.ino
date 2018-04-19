@@ -1,4 +1,9 @@
-#include "MultipleDisplays.h"
+#include <Arduino.h>
+#include "TeensyPOV.h"
+
+#define NUM_LEDS 36
+
+extern const LedArrayStruct pictureStruct;
 
 void switchDisplay(TeensyPOV *);
 void loadRose(TeensyPOV *);
