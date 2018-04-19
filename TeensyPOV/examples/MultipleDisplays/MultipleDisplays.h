@@ -15,3 +15,7 @@ extern const LedArrayStruct crossStruct;
 extern const LedArrayStruct pictureStruct;
 
 #endif /* _MULTI_DISPLAY_ */
+
+//Added by Sloeber 
+#pragma once
+
