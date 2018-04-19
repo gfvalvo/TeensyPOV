@@ -9,6 +9,7 @@
 #define TEENSYPOV_H_
 
 #include <Arduino.h>
+#define FASTLED_INTERNAL
 #include "FastLED.h"
 
 #if !defined(KINETISK)
