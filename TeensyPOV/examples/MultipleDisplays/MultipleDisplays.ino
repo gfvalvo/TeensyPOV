@@ -109,13 +109,6 @@ void setup() {
 void loop() {
 
 	display[currentDisplay].update();
-	/*
-	if (display[currentDisplay].update()) {
-		currentDisplay++;
-		currentDisplay %= numDisplays;
-		display[currentDisplay].activate();
-	}
-	 */
 
 #ifdef DEBUG_MODE
 	TeensyPOV::debugPrint();
