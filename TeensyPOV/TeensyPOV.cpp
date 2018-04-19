@@ -5,7 +5,7 @@
  *      Author: GFV
  */
 #include "TeensyPOV.h"
-#include "Utils/textCharacters.h"
+#include "textCharacters.h"
 
 static void dummy_funct(void);
 static void rpmTimerIsr(void);
