@@ -19,3 +19,7 @@ extern const LedArrayStruct pictureStruct;
 //Added by Sloeber 
 #pragma once
 
+
+//Added by Sloeber 
+#pragma once
+

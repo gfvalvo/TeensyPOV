@@ -94,7 +94,7 @@ void setup() {
 	display[4].setExpireCallback(switchDisplay);
 
 	display[5].load();
-	display[5].setDisplay(singleDensitySegmentCount, numColorBits, tdcSegment,
+	display[5].setDisplay(doubleDensitySegmentCount, numColorBits, tdcSegment,
 			palette);
 	display[5].setTiming(7000, 75, -1);
 	display[5].setActivationCallback(loadRose);
@@ -160,17 +160,17 @@ void loadRose(TeensyPOV *ptr) {
 	float angle, radius;
 	uint8_t pixel, color;
 	uint16_t segment, displaySegment;
-	for (segment = 0; segment < singleDensitySegmentCount; segment++) {
-		angle = -(float) segment / singleDensitySegmentCount;
+	for (segment = 0; segment < doubleDensitySegmentCount; segment++) {
+		angle = -(float) segment / doubleDensitySegmentCount;
 		angle *= twicePi;
 		angle += halfPi;
 		radius = amplitude * cos(shapeFactor * angle);
 		if (radius > 0) {
 			displaySegment = segment;
 		} else {
-			displaySegment = segment + singleDensitySegmentCount / 2;
-			if (displaySegment >= singleDensitySegmentCount) {
-				displaySegment -= singleDensitySegmentCount;
+			displaySegment = segment + doubleDensitySegmentCount / 2;
+			if (displaySegment >= doubleDensitySegmentCount) {
+				displaySegment -= doubleDensitySegmentCount;
 			}
 			radius = -radius;
 		}
