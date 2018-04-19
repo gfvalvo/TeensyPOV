@@ -4,7 +4,9 @@
  *  Created on: Mar 30, 2018
  *      Author: GFV
  */
-#include "MultipleDisplays.h"
+#include <stdint.h>
+#include "TeensyPOV.h"
+extern const LedArrayStruct pictureStruct;
 
 static const uint32_t numSegments = 256;
 static const uint32_t numColorBits = 4;
