@@ -1,8 +1,6 @@
 #include "TeensyPOV.h"
 #include "SimpleBitmap.h"
 
-extern const LedArrayStruct colorCrossStruct;
-
 const uint8_t clockPin = 13;
 const uint8_t dataPin = 11;
 const uint8_t hallPin = 3;
@@ -18,6 +16,7 @@ void setup() {
   Serial.println("Starting POV - Test 1");
   FastLED.addLeds<APA102, dataPin, clockPin, BGR, DATA_RATE_MHZ(24)>(leds,
       numLeds);
+
   TeensyPOV::povSetup(hallPin, leds, numLeds);
   display.load(&colorCrossStruct);
   display.activate();
