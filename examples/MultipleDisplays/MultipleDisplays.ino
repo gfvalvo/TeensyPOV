@@ -61,13 +61,13 @@ void setup() {
 	TeensyPOV::povSetup(hallPin, leds, numLeds);
 
 	display[0].load(&pictureStruct, stringArray_0, numStrings_0);
-	display[0].setTiming(5000, 0, 0);
+	display[0].setTiming(10000, 0, 0);
 	display[0].setExpireCallback(switchDisplay);
 
 	display[1].load(stringArray_1, numStrings_1);
 	display[1].setDisplay(doubleDensitySegmentCount, numColorBits, tdcSegment,
 			palette);
-	display[1].setTiming(5000, 0, 0);
+	display[1].setTiming(10000, 0, 0);
 	display[1].setExpireCallback(switchDisplay);
 
 	display[2].load(stringArray_2, numStrings_2);
@@ -79,7 +79,7 @@ void setup() {
 	display[3].load(stringArray_3, numStrings_3);
 	display[3].setDisplay(singleDensitySegmentCount, numColorBits, tdcSegment,
 			palette);
-	display[3].setTiming(5000, 0, 0);
+	display[3].setTiming(10000, 0, 0);
 	display[3].setActivationCallback(startRpmUpdateTimer);
 	display[3].setUpdateCallback(updateRpm);
 	display[3].setExpireCallback(switchDisplay);
@@ -87,14 +87,14 @@ void setup() {
 	display[4].load();
 	display[4].setDisplay(singleDensitySegmentCount, numColorBits, tdcSegment,
 			palette);
-	display[4].setTiming(7000, 30, 1);
+	display[4].setTiming(10000, 30, 1);
 	display[4].setActivationCallback(loadLimacons);
 	display[4].setExpireCallback(switchDisplay);
 
 	display[5].load();
 	display[5].setDisplay(doubleDensitySegmentCount, numColorBits, tdcSegment,
 			palette);
-	display[5].setTiming(7000, 75, -1);
+	display[5].setTiming(10000, 75, -1);
 	display[5].setActivationCallback(loadRose);
 	display[5].setExpireCallback(switchDisplay);
 
