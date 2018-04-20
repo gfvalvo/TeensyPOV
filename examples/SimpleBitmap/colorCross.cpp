@@ -2,9 +2,6 @@
 #include "TeensyPOV.h"
 #include "SimpleBitmap.h"
 
-extern const LedArrayStruct colorCrossStruct;
-#define NUM_LEDS 36
-
 static const uint32_t numSegments = 128;
 static const uint32_t numColorBits = 3;
 static const uint32_t tdcDisplaySegment = 0;
