@@ -31,23 +31,18 @@ TeensyPOV display[numDisplays];
 char charBuffer[10];
 
 const DisplayStringSpec stringArray_0[] =
-		{ "   DINY  ", BOTTOM, 35, 6, 7, true };
+		{ "SPONGEBOB", BOTTOM, 35, 8, 6, true };
 const uint8_t numStrings_0 = sizeof(stringArray_0) / sizeof(DisplayStringSpec);
 
-/*
- const DisplayStringSpec stringArray_1[] = { { "GREGORY", TOP, 35, 6, 0, false },
- { "VALVO", TOP, 25, 2, 0, false }, { "DIANE", BOTTOM, 25, 5, 0, true },
- { "VALVO", BOTTOM, 35, 1, 0, true } };
- const uint8_t numStrings_1 = sizeof(stringArray_1) / sizeof(DisplayStringSpec);
- */
 const DisplayStringSpec stringArray_1[] = { { "Eat at Joes", TOP, 35, 6, 0,
 		false }, { "Restaurant", TOP, 25, 2, 0, false }, { "Great Food", BOTTOM,
 		25, 5, 0, true }, { "Fair Prices", BOTTOM, 35, 1, 0, true } };
 const uint8_t numStrings_1 = sizeof(stringArray_1) / sizeof(DisplayStringSpec);
 
-const DisplayStringSpec stringArray_2[] = { { "JESSICA", TOP, 35, 2, 0, false },
-		{ "VALVO", TOP, 25, 3, 0, false }, { "VALVO", BOTTOM, 25, 7, 0, false },
-		{ "JAMIE", BOTTOM, 35, 5, 0, false } };
+const DisplayStringSpec stringArray_2[] = { { "HELLO", TOP, 35, 2, 0, false }, {
+		"WORLD", TOP, 25, 3, 0, false },
+		{ "MEET YOU", BOTTOM, 25, 7, 0, false }, { "NICE TO", BOTTOM, 35, 5, 0,
+				false } };
 const uint8_t numStrings_2 = sizeof(stringArray_2) / sizeof(DisplayStringSpec);
 
 const DisplayStringSpec stringArray_3[] = { { "Fan", TOP, 35, 2, 0, false }, {
@@ -65,13 +60,11 @@ void setup() {
 
 	TeensyPOV::povSetup(hallPin, leds, numLeds);
 
-	//display[0].load(&faceStruct, stringArray_0, numStrings_0);
 	display[0].load(&pictureStruct, stringArray_0, numStrings_0);
 	display[0].setTiming(5000, 0, 0);
 	display[0].setExpireCallback(switchDisplay);
 
 	display[1].load(stringArray_1, numStrings_1);
-	//display[1].setDisplay(segmentCount, numColorBits, tdcSegment, palette);
 	display[1].setDisplay(doubleDensitySegmentCount, numColorBits, tdcSegment,
 			palette);
 	display[1].setTiming(5000, 0, 0);
@@ -80,7 +73,7 @@ void setup() {
 	display[2].load(stringArray_2, numStrings_2);
 	display[2].setDisplay(singleDensitySegmentCount, numColorBits, tdcSegment,
 			palette);
-	display[2].setTiming(5000, 20, -1);
+	display[2].setTiming(15000, 100, -1);
 	display[2].setExpireCallback(switchDisplay);
 
 	display[3].load(stringArray_3, numStrings_3);
