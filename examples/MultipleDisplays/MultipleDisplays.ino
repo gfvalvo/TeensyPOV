@@ -35,8 +35,8 @@ const DisplayStringSpec stringArray_0[] =
 const uint8_t numStrings_0 = sizeof(stringArray_0) / sizeof(DisplayStringSpec);
 
 const DisplayStringSpec stringArray_1[] = { { "Eat at Joes", TOP, 35, 6, 0,
-		false }, { "Restaurant", TOP, 25, 2, 0, false }, { "Great Food", BOTTOM,
-		25, 5, 0, true }, { "Fair Prices", BOTTOM, 35, 1, 0, true } };
+		false }, { "Restaurant", TOP, 25, 2, 0, false }, { "Great Value", BOTTOM,
+		25, 5, 0, true }, { "Great Food", BOTTOM, 35, 1, 0, true } };
 const uint8_t numStrings_1 = sizeof(stringArray_1) / sizeof(DisplayStringSpec);
 
 const DisplayStringSpec stringArray_2[] = { { "HELLO", TOP, 35, 2, 0, false }, {
