@@ -66,7 +66,7 @@ static void (*funct_table[4])() = {dummy_funct, dummy_funct, dummy_funct, dummy_
 static void (*tdcInteruptVector)() = dummy_funct;
 
 #ifdef SIMULATE_RPM
-static const uint32_t tdcSimulatorCycles = (F_BUS / 1000000UL) * 10000000UL - 1;
+static const uint32_t tdcSimulatorCycles = (F_BUS / 1000000UL) * 52174UL - 1;
 static KINETISK_PIT_CHANNEL_t *tdcSimulator;
 #endif  // SIMULATE_RPM
 
