@@ -7,6 +7,16 @@
 #include "TeensyPOV.h"
 #include "textCharacters.h"
 
+const uint8_t LOG_2_SEGMENTS = 1;
+const uint8_t LOG_4_SEGMENTS = 2;
+const uint8_t LOG_8_SEGMENTS = 3;
+const uint8_t LOG_16_SEGMENTS = 4;
+const uint8_t LOG_32_SEGMENTS = 5;
+const uint8_t LOG_64_SEGMENTS = 6;
+const uint8_t LOG_128_SEGMENTS = 7;
+const uint8_t LOG_256_SEGMENTS = 8;
+const uint8_t LOG_512_SEGMENTS = 9;
+
 static void dummy_funct(void);
 static void rpmTimerIsr(void);
 static void segmentTimerIsr(void);
@@ -18,7 +28,7 @@ static void updateLeds(void);
 static void allLedsOff(void);
 static void loadPattern(const LedArrayStruct *);
 static void loadColors(const uint32_t *);
-static void setParameters(uint16_t, uint8_t, uint16_t);
+static void setParameters(uint8_t, uint8_t, uint16_t);
 static void loadString(const char *, TextPosition, uint8_t, uint8_t, uint8_t,
 		bool);
 static void setPixel(uint16_t, uint16_t, uint32_t);
@@ -34,7 +44,7 @@ static const uint32_t rpmCycles = (F_BUS / 1000000UL) * maxRevolutionPeriod - 1;
 
 static const uint32_t maxNumLeds = 50;
 static const uint32_t maxNumColorBits = 6;
-static const uint32_t maxNumSegments = 256;
+static const uint32_t maxNumSegments = 1 << LOG_512_SEGMENTS;
 static const uint32_t bitsPerSegment = maxNumLeds * maxNumColorBits;
 static const uint32_t bitsPerWord =
 		((maxNumColorBits == 3) || (maxNumColorBits == 5)
@@ -54,7 +64,7 @@ volatile static uint32_t segmentArray[maxNumSegments][maxColumns];
 volatile static uint32_t colorArray[1 << maxNumColorBits];
 volatile static uint32_t currentNumColorBits = 0;
 volatile static uint32_t currentNumSegments = 1 << currentLogNumSegments;
-//volatile static uint32_t currentSegmentMask = currentNumSegments - 1;
+volatile static uint32_t currentSegmentMask = currentNumSegments - 1;
 volatile static uint32_t bitCountLoad, currentColorMask;
 volatile static uint32_t goodRpmCount;
 volatile static uint32_t currentDisplaySegment;
@@ -84,16 +94,6 @@ volatile static uint32_t lastSegment;
 uint8_t TeensyPOV::numPov = 0;
 uint8_t TeensyPOV::currentActivePov = 0;
 
-const uint8_t LOG_2_SEGMENTS = 1;
-const uint8_t LOG_4_SEGMENTS = 2;
-const uint8_t LOG_8_SEGMENTS = 3;
-const uint8_t LOG_16_SEGMENTS = 4;
-const uint8_t LOG_32_SEGMENTS = 5;
-const uint8_t LOG_64_SEGMENTS = 6;
-const uint8_t LOG_128_SEGMENTS = 7;
-const uint8_t LOG_256_SEGMENTS = 8;
-const uint8_t LOG_512_SEGMENTS = 9;
-
 TeensyPOV::TeensyPOV() {
 	/*
 	 * Constructor
@@ -112,7 +112,7 @@ void TeensyPOV::load(const LedArrayStruct *pattern) {
 	 * 		N/A
 	 */
 	image = pattern;
-	numSegments = pattern->rows;
+	logNumSegments = pattern->logNumSegments;
 	numColorBits = pattern->numColorBits;
 	colorPalette = pattern->colors;
 	tdcSegment = pattern->tdcDisplaySegment;
@@ -146,7 +146,7 @@ void TeensyPOV::load(const LedArrayStruct *pattern,
 	 * 		N/A
 	 */
 	image = pattern;
-	numSegments = pattern->rows;
+	logNumSegments = pattern->logNumSegments;
 	numColorBits = pattern->numColorBits;
 	colorPalette = pattern->colors;
 	tdcSegment = pattern->tdcDisplaySegment;
@@ -215,7 +215,7 @@ void TeensyPOV::load() {
 	expireCallback = nullptr;
 }
 
-void TeensyPOV::setDisplay(uint16_t seg, uint8_t cBits, uint16_t tdc,
+void TeensyPOV::setDisplay(uint8_t logSeg, uint8_t cBits, uint16_t tdc,
 		const uint32_t *colors) {
 	/*
 	 * Load the POV parameters for a TeensyPOV object that does not contain a bitmap image (i.e. a LedArrayStruct).
@@ -233,7 +233,7 @@ void TeensyPOV::setDisplay(uint16_t seg, uint8_t cBits, uint16_t tdc,
 	 * Returns:
 	 * 	N/A
 	 */
-	numSegments = seg;
+	logNumSegments = logSeg;
 	numColorBits = cBits;
 	tdcSegment = tdc;
 	colorPalette = colors;
@@ -297,7 +297,7 @@ void TeensyPOV::loadPovStructures(bool startTiming) {
 	uint8_t index;
 	const DisplayStringSpec *strPtr;
 	if (currentActivePov != idNum) {
-		setParameters(numSegments, numColorBits, tdcSegment);
+		setParameters(logNumSegments, numColorBits, tdcSegment);
 	}
 
 	loadColors(colorPalette);
@@ -433,12 +433,15 @@ bool TeensyPOV::update() {
 		}
 	}
 
-
 	if (updateCallback) {
 		updateCallback(this);
 	}
 
 	return false;
+}
+
+uint16_t TeensyPOV::getNumSegments() {
+	return currentNumSegments;
 }
 
 bool TeensyPOV::povSetup(uint8_t hPin, CRGB *ledPtr, uint8_t num) {
@@ -531,7 +534,7 @@ bool TeensyPOV::povSetup(uint8_t hPin, CRGB *ledPtr, uint8_t num) {
 	attachInterrupt(hallPin, mainTdcISR, FALLING);
 #endif  // SIMULATE_RPM
 
-	setParameters(2, 1, 0);
+	setParameters(1, 1, 0);
 	return true;
 }
 
@@ -665,7 +668,7 @@ static uint16_t virtualToPhysicalSegment(int16_t virtSegment) {
 	return virtSegment;
 }
 
-static void setParameters(uint16_t segments, uint8_t colorBits,
+static void setParameters(uint8_t logSegments, uint8_t colorBits,
 		uint16_t tdcSegment) {
 	segmentTimer->TCTRL = 0;		// Disable PIT will be enabled in tdcISR()
 	segmentTimer->TFLG = 1;			// Clear interrupt flag
@@ -674,7 +677,9 @@ static void setParameters(uint16_t segments, uint8_t colorBits,
 	tdcInteruptVector = dummy_funct;
 	allLedsOff();
 
-	currentNumSegments = segments;
+	currentLogNumSegments = logSegments;
+	currentNumSegments = 1 << currentLogNumSegments;
+	currentSegmentMask = currentNumSegments - 1;
 	currentNumColorBits = colorBits;
 	currentTdcDisplaySegment = tdcSegment;
 	currentColorMask = (1 << currentNumColorBits) - 1;
@@ -731,7 +736,9 @@ static void updateLeds() {
 	}
 	FastLED.show();
 	//ledOnTimer->TCTRL = 3;
-	allLedsOff();
+	if (currentLogNumSegments < LOG_512_SEGMENTS) {
+		allLedsOff();
+	}
 }
 
 static void setPixel(uint16_t segment, uint16_t pixel, uint32_t value) {

@@ -8,7 +8,7 @@
 #include "TeensyPOV.h"
 extern const LedArrayStruct pictureStruct;
 
-static const uint32_t numSegments = 256;
+static const uint8_t logNumSegments = 8;
 static const uint32_t numColorBits = 4;
 static const uint32_t tdcDisplaySegment = 0;
 
@@ -277,7 +277,7 @@ static const uint32_t colorTable[] = { 0x00000000, 0x00FFFF00, 0x00FFFFFF,
 		0x00FF0000 };
 
 const LedArrayStruct pictureStruct = { &pictureArray[0][0], &colorTable[0],
-		numColorBits, numSegments, 5, tdcDisplaySegment };
+		numColorBits, logNumSegments, 5, tdcDisplaySegment };
 
 
 

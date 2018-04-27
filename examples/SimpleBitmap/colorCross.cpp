@@ -2,7 +2,8 @@
 #include "TeensyPOV.h"
 #include "SimpleBitmap.h"
 
-static const uint32_t numSegments = 128;
+static const uint32_t logNumSegments = 7;
+static const uint32_t numSegments = 1 << logNumSegments;
 static const uint32_t numColorBits = 3;
 static const uint32_t tdcDisplaySegment = 0;
 
@@ -51,4 +52,4 @@ static const uint32_t crossArray[numSegments][numColumns] = { { 0x09249249,
 				0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } };
 
 const LedArrayStruct colorCrossStruct = { &crossArray[0][0], &crossColors[0],
-		numColorBits, numSegments, numColumns, tdcDisplaySegment };
+		numColorBits, logNumSegments, numColumns, tdcDisplaySegment };

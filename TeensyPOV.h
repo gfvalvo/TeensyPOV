@@ -37,7 +37,7 @@ struct LedArrayStruct {
 	const uint32_t *array;
 	const uint32_t *colors;
 	uint32_t numColorBits;
-	uint32_t rows;
+	uint8_t logNumSegments;
 	uint32_t columns;
 	uint32_t tdcDisplaySegment;
 };
@@ -54,7 +54,7 @@ struct DisplayStringSpec {
 class TeensyPOV {
 private:
 	uint8_t numColorBits = 0;
-	uint16_t numSegments = 0;
+	uint8_t logNumSegments = 1;
 	const uint32_t *colorPalette = nullptr;
 	const LedArrayStruct *image = nullptr;
 	const DisplayStringSpec *strings = nullptr;
@@ -81,7 +81,7 @@ public:
 	void load();
 	void activate();
 	void refresh();
-	void setDisplay(uint16_t, uint8_t, uint16_t, const uint32_t *);
+	void setDisplay(uint8_t, uint8_t, uint16_t, const uint32_t *);
 	void setTiming(uint32_t, uint32_t, int16_t);
 	void setActivationCallback(void (*)(TeensyPOV *));
 	void setUpdateCallback(void (*)(TeensyPOV *));
@@ -89,6 +89,7 @@ public:
 	bool update(void);
 	static bool povSetup(uint8_t, CRGB *, uint8_t);
 	static bool rpmGood(void);
+	static uint16_t getNumSegments(void);
 	static uint32_t getLastRotationCount(void);
 	static void setLed(uint16_t, uint16_t, uint32_t);
 #ifdef DEBUG_MODE
