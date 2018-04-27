@@ -16,8 +16,6 @@ const uint8_t dataPin = 11;
 const uint8_t hallPin = 3;
 const uint8_t numColorBits = 3;
 const uint8_t numDisplays = 6;
-const uint16_t singleDensitySegmentCount = 128;
-const uint16_t doubleDensitySegmentCount = 256;
 const uint16_t tdcSegment = 0;
 const uint32_t numLeds = NUM_LEDS;
 CRGB leds[numLeds];
@@ -65,19 +63,19 @@ void setup() {
 	display[0].setExpireCallback(switchDisplay);
 
 	display[1].load(stringArray_1, numStrings_1);
-	display[1].setDisplay(doubleDensitySegmentCount, numColorBits, tdcSegment,
+	display[1].setDisplay(LOG_256_SEGMENTS, numColorBits, tdcSegment,
 			palette);
 	display[1].setTiming(10000, 0, 0);
 	display[1].setExpireCallback(switchDisplay);
 
 	display[2].load(stringArray_2, numStrings_2);
-	display[2].setDisplay(singleDensitySegmentCount, numColorBits, tdcSegment,
+	display[2].setDisplay(LOG_128_SEGMENTS, numColorBits, tdcSegment,
 			palette);
 	display[2].setTiming(15000, 100, -1);
 	display[2].setExpireCallback(switchDisplay);
 
 	display[3].load(stringArray_3, numStrings_3);
-	display[3].setDisplay(singleDensitySegmentCount, numColorBits, tdcSegment,
+	display[3].setDisplay(LOG_128_SEGMENTS, numColorBits, tdcSegment,
 			palette);
 	display[3].setTiming(10000, 0, 0);
 	display[3].setActivationCallback(startRpmUpdateTimer);
@@ -85,14 +83,14 @@ void setup() {
 	display[3].setExpireCallback(switchDisplay);
 
 	display[4].load();
-	display[4].setDisplay(singleDensitySegmentCount, numColorBits, tdcSegment,
+	display[4].setDisplay(LOG_128_SEGMENTS, numColorBits, tdcSegment,
 			palette);
 	display[4].setTiming(10000, 30, 1);
 	display[4].setActivationCallback(loadLimacons);
 	display[4].setExpireCallback(switchDisplay);
 
 	display[5].load();
-	display[5].setDisplay(doubleDensitySegmentCount, numColorBits, tdcSegment,
+	display[5].setDisplay(LOG_512_SEGMENTS, numColorBits, tdcSegment,
 			palette);
 	display[5].setTiming(10000, 75, -1);
 	display[5].setActivationCallback(loadRose);
@@ -128,18 +126,20 @@ void loadLimacons(TeensyPOV *ptr) {
 	const float amplitude = numLeds / (shapeFactor + 1.0) - 1;
 	float angle, radius;
 	uint8_t pixel, color;
-	uint16_t segment, displaySegment;
-	for (segment = 0; segment < singleDensitySegmentCount; segment++) {
-		angle = -(float) segment / singleDensitySegmentCount;
+	uint16_t segment, displaySegment, numSegments;
+
+	numSegments = TeensyPOV::getNumSegments();
+	for (segment = 0; segment < numSegments; segment++) {
+		angle = -(float) segment / numSegments;
 		angle *= twicePi;
 		angle += halfPi;
 		radius = amplitude * (1.0 - shapeFactor * cos(angle));
 		if (radius > 0) {
 			displaySegment = segment;
 		} else {
-			displaySegment = segment + singleDensitySegmentCount / 2;
-			if (displaySegment >= singleDensitySegmentCount) {
-				displaySegment -= singleDensitySegmentCount;
+			displaySegment = segment + numSegments / 2;
+			if (displaySegment >= numSegments) {
+				displaySegment -= numSegments;
 			}
 			radius = -radius;
 		}
@@ -157,18 +157,20 @@ void loadRose(TeensyPOV *ptr) {
 	const float amplitude = numLeds - 1;
 	float angle, radius;
 	uint8_t pixel, color;
-	uint16_t segment, displaySegment;
-	for (segment = 0; segment < doubleDensitySegmentCount; segment++) {
-		angle = -(float) segment / doubleDensitySegmentCount;
+	uint16_t segment, displaySegment, numSegments;
+
+	numSegments = TeensyPOV::getNumSegments();
+	for (segment = 0; segment < numSegments; segment++) {
+		angle = -(float) segment / numSegments;
 		angle *= twicePi;
 		angle += halfPi;
 		radius = amplitude * cos(shapeFactor * angle);
 		if (radius > 0) {
 			displaySegment = segment;
 		} else {
-			displaySegment = segment + doubleDensitySegmentCount / 2;
-			if (displaySegment >= doubleDensitySegmentCount) {
-				displaySegment -= doubleDensitySegmentCount;
+			displaySegment = segment + numSegments / 2;
+			if (displaySegment >= numSegments) {
+				displaySegment -= numSegments;
 			}
 			radius = -radius;
 		}

@@ -23,7 +23,6 @@ static void segmentTimerIsr(void);
 static void tdcIsrInit(void);
 static void tdcIsrActive(void);
 static void mainTdcISR(void);
-static void ledOffISR(void);
 static void updateLeds(void);
 static void allLedsOff(void);
 static void loadPattern(const LedArrayStruct *);
@@ -32,7 +31,6 @@ static void setParameters(uint8_t, uint8_t, uint16_t);
 static void loadString(const char *, TextPosition, uint8_t, uint8_t, uint8_t,
 		bool);
 static void setPixel(uint16_t, uint16_t, uint32_t);
-static uint16_t virtualToPhysicalSegment(int16_t);
 
 #ifndef SIMULATE_RPM
 static const uint32_t maxRevolutionPeriod = 100000UL; // Only run LEDs when > 10 revs / sec (600 RPM)
@@ -73,7 +71,7 @@ volatile static uint32_t currentTdcDisplaySegment = 0;
 volatile static uint32_t lastRpmTimerReading;
 volatile static uint8_t hallPin;
 
-static KINETISK_PIT_CHANNEL_t *rpmTimer, *segmentTimer, *ledOnTimer;
+static KINETISK_PIT_CHANNEL_t *rpmTimer, *segmentTimer;
 
 static void (*funct_table[4])() = {dummy_funct, dummy_funct, dummy_funct, dummy_funct};
 static void (*tdcInteruptVector)() = dummy_funct;
@@ -405,7 +403,6 @@ bool TeensyPOV::update() {
 	 *		false -- otherwise.
 	 */
 	uint32_t currentMillis;
-	int16_t segment;
 
 	currentMillis = millis();
 	if (idNum != currentActivePov) {
@@ -419,8 +416,8 @@ bool TeensyPOV::update() {
 	if (rotationPeriod > 0) {
 		if (currentMillis - rotationTimer >= rotationPeriod) {
 			rotationTimer += rotationPeriod;
-			segment = currentTdcDisplaySegment + rotationIncrement;
-			currentTdcDisplaySegment = virtualToPhysicalSegment(segment);
+			currentTdcDisplaySegment = (currentTdcDisplaySegment
+					+ rotationIncrement) & currentSegmentMask;
 		}
 	}
 
@@ -460,14 +457,9 @@ bool TeensyPOV::povSetup(uint8_t hPin, CRGB *ledPtr, uint8_t num) {
 	 */
 	const uint8_t rpmTimerIndex = 0;
 	const uint8_t segmentTimerIndex = 1;
-	const uint8_t ledOnTimerIndex = 2;
 
 	const uint8_t rpmTimerInterruptPriority = 128;
 	const uint8_t segmentTimerInterruptPriority = 128;
-	const uint8_t ledOnTimerTimerInterruptPriority = 128;
-
-	const uint32_t ledOnPeriod = 20UL; // Leave LEDs on Time
-	const uint32_t ledOnCycles = (F_BUS / 1000000UL) * ledOnPeriod - 1;
 
 	if (num > maxNumLeds) {
 		return false;
@@ -486,7 +478,6 @@ bool TeensyPOV::povSetup(uint8_t hPin, CRGB *ledPtr, uint8_t num) {
 	// Assign PITs
 	rpmTimer = KINETISK_PIT_CHANNELS + rpmTimerIndex;
 	segmentTimer = KINETISK_PIT_CHANNELS + segmentTimerIndex;
-	ledOnTimer = KINETISK_PIT_CHANNELS + ledOnTimerIndex;
 
 	// Configure RPM Watchdog PIT
 	rpmTimer->TCTRL = 0;							// Disable PIT
@@ -504,14 +495,6 @@ bool TeensyPOV::povSetup(uint8_t hPin, CRGB *ledPtr, uint8_t num) {
 			segmentTimerInterruptPriority);	// Set interrupt priority
 	NVIC_ENABLE_IRQ(IRQ_PIT_CH0 + segmentTimerIndex);		// Enable interrupt
 
-	// Configure LED Off PIT to turn off leds ~20us after being turned on
-	ledOnTimer->TCTRL = 0;		// Disable PIT will be enabled in tdcISR()
-	ledOnTimer->TFLG = 1;			// Clear interrupt flag
-	ledOnTimer->LDVAL = ledOnCycles;					// Set count down value
-	funct_table[ledOnTimerIndex] = ledOffISR;		// Set ISR
-	NVIC_SET_PRIORITY(IRQ_PIT_CH0 + ledOnTimerIndex,
-			ledOnTimerTimerInterruptPriority);	// Set interrupt priority
-	NVIC_ENABLE_IRQ(IRQ_PIT_CH0 + ledOnTimerIndex);	// Enable interrupt
 
 #ifdef SIMULATE_RPM
 	// Set up timer interrupt to simulate Hall sensor (Top Dead Center)
@@ -558,7 +541,7 @@ static void loadString(const char *string, TextPosition pos, uint8_t topLed,
 	int8_t bufferPositionDelta;
 	uint16_t currentMaxChars, stopLed, startLed, physicalSegment;
 	uint16_t charCounter, pixelCounter, matrixCounter;
-	int16_t virtualSegment;
+	uint16_t virtualSegment;
 
 	if (topLed >= numLeds) {
 		return;
@@ -571,8 +554,6 @@ static void loadString(const char *string, TextPosition pos, uint8_t topLed,
 	stopLed = topLed;
 	startLed = stopLed - 6;
 
-	//memset(charBuffer, ' ', maxTextChars);
-	//charBuffer[maxTextChars] = '\0';
 	memset(charBuffer, '\0', maxTextChars);
 
 	currentMaxChars = currentNumSegments / (2 * 7);
@@ -580,8 +561,6 @@ static void loadString(const char *string, TextPosition pos, uint8_t topLed,
 	if (len > currentMaxChars) {
 		len = currentMaxChars;
 	}
-	//padPosition = (currentMaxChars - len) / 2;
-	//strncpy(charBuffer + padPosition, string, len);
 	strncpy(charBuffer, string, len);
 
 	switch (pos) {
@@ -607,9 +586,8 @@ static void loadString(const char *string, TextPosition pos, uint8_t topLed,
 	default:
 		return;
 	}
+	physicalSegment = virtualSegment & currentSegmentMask;
 
-	physicalSegment = virtualToPhysicalSegment(virtualSegment);
-	//for (charCounter = 0; charCounter < currentMaxChars; charCounter++) {
 	for (charCounter = 0; charCounter < len; charCounter++) {
 		getMatrix(*bufferPosition, charMatrix, invert);
 
@@ -617,7 +595,7 @@ static void loadString(const char *string, TextPosition pos, uint8_t topLed,
 			setPixel(physicalSegment, pixelCounter, background);
 		}
 		virtualSegment++;
-		physicalSegment = virtualToPhysicalSegment(virtualSegment);
+		physicalSegment = virtualSegment & currentSegmentMask;
 
 		for (matrixCounter = 0; matrixCounter < 5; matrixCounter++) {
 			fontMask = 0x01;
@@ -636,14 +614,14 @@ static void loadString(const char *string, TextPosition pos, uint8_t topLed,
 				}
 			}
 			virtualSegment++;
-			physicalSegment = virtualToPhysicalSegment(virtualSegment);
+			physicalSegment = virtualSegment & currentSegmentMask;
 		}
 
 		for (pixelCounter = startLed; pixelCounter <= stopLed; pixelCounter++) {
 			setPixel(physicalSegment, pixelCounter, background);
 		}
 		virtualSegment++;
-		physicalSegment = virtualToPhysicalSegment(virtualSegment);
+		physicalSegment = virtualSegment & currentSegmentMask;
 		bufferPosition += bufferPositionDelta;
 	}
 }
@@ -653,16 +631,6 @@ static void loadColors(const uint32_t *cPtr) {
 	for (index1 = 0; index1 < (1 << currentNumColorBits); index1++) {
 		colorArray[index1] = *(cPtr + index1);
 	}
-}
-
-static uint16_t virtualToPhysicalSegment(int16_t virtSegment) {
-	while (virtSegment >= (int16_t) currentNumSegments) {
-		virtSegment -= currentNumSegments;
-	}
-	while (virtSegment < 0) {
-		virtSegment += currentNumSegments;
-	}
-	return virtSegment;
 }
 
 static void setParameters(uint8_t logSegments, uint8_t colorBits,
@@ -708,7 +676,6 @@ static void setParameters(uint8_t logSegments, uint8_t colorBits,
 }
 
 static void allLedsOff() {
-	//FastLED.clear();
 	uint32_t index1;
 	for (index1 = 0; index1 < numLeds; index1++) {
 		leds[index1] = CRGB::Black;
@@ -732,7 +699,6 @@ static void updateLeds() {
 		}
 	}
 	FastLED.show();
-	//ledOnTimer->TCTRL = 3;
 	if (currentLogNumSegments < LOG_512_SEGMENTS) {
 		allLedsOff();
 	}
@@ -750,9 +716,6 @@ static void setPixel(uint16_t segment, uint16_t pixel, uint32_t value) {
 
 	segmentArray[segment][pixelWord] &= (~pixelMask);
 	segmentArray[segment][pixelWord] |= value;
-	//offset = segment * maxColumns + pixelWord;
-	//*(segmentArray + offset) &= (~pixelMask);
-	//*(segmentArray + offset) |= value;
 }
 
 static void mainTdcISR() {
@@ -840,13 +803,6 @@ static void segmentTimerIsr() {
 		segmentTimer->TCTRL = 0;
 		segmentTimer->TFLG = 1;
 	}
-}
-
-static void ledOffISR() {
-	// Shut off LEDS a few uS after lit by segment timer
-	ledOnTimer->TCTRL = 0;
-	ledOnTimer->TFLG = 1;
-	allLedsOff();
 }
 
 static void dummy_funct() {

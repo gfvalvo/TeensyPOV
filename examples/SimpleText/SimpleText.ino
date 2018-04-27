@@ -16,7 +16,7 @@ const uint8_t dataPin = 11;
 const uint8_t hallPin = 3;
 const uint8_t numColorBits = 2;
 uint8_t tdcSegment = 0;
-const uint16_t numSegements = 128;
+const uint16_t logNumSegements = 7;
 const uint16_t numLeds = NUM_LEDS;
 
 CRGB leds[numLeds];
@@ -40,7 +40,7 @@ void setup() {
 	TeensyPOV::povSetup(hallPin, leds, numLeds);
 
 	display.load(stringArray, numStrings);
-	display.setDisplay(numSegements, numColorBits, tdcSegment, palette);
+	display.setDisplay(logNumSegements, numColorBits, tdcSegment, palette);
 
 	while (!TeensyPOV::rpmGood()) {
 	}
