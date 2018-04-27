@@ -16,6 +16,16 @@
 #error Kinetisk required
 #endif
 
+extern const uint8_t LOG_2_SEGMENTS;
+extern const uint8_t LOG_4_SEGMENTS;
+extern const uint8_t LOG_8_SEGMENTS;
+extern const uint8_t LOG_16_SEGMENTS;
+extern const uint8_t LOG_32_SEGMENTS;
+extern const uint8_t LOG_64_SEGMENTS;
+extern const uint8_t LOG_128_SEGMENTS;
+extern const uint8_t LOG_256_SEGMENTS;
+extern const uint8_t LOG_512_SEGMENTS;
+
 //#define SIMULATE_RPM
 //#define DEBUG_MODE
 

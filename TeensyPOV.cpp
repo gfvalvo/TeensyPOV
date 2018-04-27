@@ -49,9 +49,12 @@ static uint8_t pixelsPerWord;
 static uint32_t numLeds;
 static CRGB *leds;
 
+volatile static uint8_t currentLogNumSegments = 1;
 volatile static uint32_t segmentArray[maxNumSegments][maxColumns];
 volatile static uint32_t colorArray[1 << maxNumColorBits];
-volatile static uint32_t currentNumColorBits = 0, currentNumSegments = 2;
+volatile static uint32_t currentNumColorBits = 0;
+volatile static uint32_t currentNumSegments = 1 << currentLogNumSegments;
+//volatile static uint32_t currentSegmentMask = currentNumSegments - 1;
 volatile static uint32_t bitCountLoad, currentColorMask;
 volatile static uint32_t goodRpmCount;
 volatile static uint32_t currentDisplaySegment;
@@ -80,6 +83,16 @@ volatile static uint32_t lastSegment;
 
 uint8_t TeensyPOV::numPov = 0;
 uint8_t TeensyPOV::currentActivePov = 0;
+
+const uint8_t LOG_2_SEGMENTS = 1;
+const uint8_t LOG_4_SEGMENTS = 2;
+const uint8_t LOG_8_SEGMENTS = 3;
+const uint8_t LOG_16_SEGMENTS = 4;
+const uint8_t LOG_32_SEGMENTS = 5;
+const uint8_t LOG_64_SEGMENTS = 6;
+const uint8_t LOG_128_SEGMENTS = 7;
+const uint8_t LOG_256_SEGMENTS = 8;
+const uint8_t LOG_512_SEGMENTS = 9;
 
 TeensyPOV::TeensyPOV() {
 	/*
@@ -717,7 +730,8 @@ static void updateLeds() {
 		}
 	}
 	FastLED.show();
-	ledOnTimer->TCTRL = 3;
+	//ledOnTimer->TCTRL = 3;
+	allLedsOff();
 }
 
 static void setPixel(uint16_t segment, uint16_t pixel, uint32_t value) {
