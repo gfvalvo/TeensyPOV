@@ -587,7 +587,6 @@ static void loadString(const char *string, TextPosition pos, uint8_t topLed,
 	switch (pos) {
 	case TOP:
 		virtualSegment = 3 * currentNumSegments / 4 + 1;
-		//virtualSegment += (currentNumSegments / 2 - currentMaxChars * 7) / 2;
 		virtualSegment += (currentNumSegments / 2 - len * 7) / 2;
 		bufferPosition = charBuffer;
 		bufferPositionDelta = 1;
@@ -595,10 +594,8 @@ static void loadString(const char *string, TextPosition pos, uint8_t topLed,
 
 	case BOTTOM:
 		virtualSegment = currentNumSegments / 4 + 1;
-		//virtualSegment += (currentNumSegments / 2 - currentMaxChars * 7) / 2;
 		virtualSegment += (currentNumSegments / 2 - len * 7) / 2;
 		if (invert) {
-			//bufferPosition = charBuffer + currentMaxChars - 1;
 			bufferPosition = charBuffer + len - 1;
 			bufferPositionDelta = -1;
 		} else {
@@ -796,14 +793,13 @@ static void tdcIsrActive(void) {
 
 	segmentTimer->TCTRL = 0;
 	segmentTimer->TFLG = 1;
-	newSegmentCounter = (rpmCycles - currentRpmCounter) / currentNumSegments;
+	newSegmentCounter = (rpmCycles - currentRpmCounter)
+			>> currentLogNumSegments;
 	segmentTimer->LDVAL = newSegmentCounter;
 	segmentTimer->TCTRL = 3;		// Enable segment PIT and interrupt
 	currentDisplaySegment = currentTdcDisplaySegment;
 	updateLeds();	// Set LEDs per currentDisplaySegment
-	if (++currentDisplaySegment >= currentNumSegments) {
-		currentDisplaySegment = 0;
-	}
+	currentDisplaySegment = (currentDisplaySegment + 1) & currentSegmentMask;
 }
 
 static void rpmTimerIsr() {
@@ -837,9 +833,7 @@ static void segmentTimerIsr() {
 #endif  // DEBUG_MODE
 
 	updateLeds();	// Set LEDs per currentDisplaySegment
-	if (++currentDisplaySegment >= currentNumSegments) {
-		currentDisplaySegment = 0;
-	}
+	currentDisplaySegment = (currentDisplaySegment + 1) & currentSegmentMask;
 	if (currentDisplaySegment == currentTdcDisplaySegment) {
 		// Shut down PIT since tdcDisplaySegment is displayed by tdcISR()
 		// Wait for tdcISR() to re-enable
