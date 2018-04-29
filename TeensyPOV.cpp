@@ -14,8 +14,6 @@ uint8_t TeensyPOV::pixelsPerWord;
 uint32_t TeensyPOV::numLeds;
 CRGB * TeensyPOV::leds;
 
-uint8_t TeensyPOV::numPov = 0;
-uint8_t TeensyPOV::currentActivePov = 0;
 KINETISK_PIT_CHANNEL_t * TeensyPOV::rpmTimer;
 KINETISK_PIT_CHANNEL_t * TeensyPOV::segmentTimer;
 #ifdef SIMULATE_RPM

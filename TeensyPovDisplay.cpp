@@ -6,7 +6,6 @@
  */
 
 #include "TeensyPovDisplay.h"
-#include "textCharacters.h"
 
 /*
 const uint8_t LOG_2_SEGMENTS = 1;
@@ -96,11 +95,11 @@ volatile static bool missedSegment = false;
 volatile static uint8_t tdcIsrFire = 0;
 volatile static uint32_t lastSegment;
 #endif  // DEBUG_MODE
-
+ */
 uint8_t TeensyPovDisplay::numPov = 0;
 uint8_t TeensyPovDisplay::currentActivePov = 0;
 
- */
+
 
 TeensyPovDisplay::TeensyPovDisplay() {
 	/*
@@ -392,7 +391,7 @@ void TeensyPovDisplay::loadPovStructures(bool startTiming) {
 	if (strings) {
 		for (index = 0; index < numStrings; index++) {
 			strPtr = strings + index;
-		TeensyPOV::(strPtr->characters, strPtr->position,
+			TeensyPOV::loadString(strPtr->characters, strPtr->position,
 					strPtr->topRow, strPtr->textColor, strPtr->backgroundColor,
 					strPtr->invert);
 		}

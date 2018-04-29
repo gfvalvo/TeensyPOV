@@ -102,8 +102,6 @@ private:
 	static uint8_t pixelsPerWord;
 	static uint32_t numLeds;
 	static CRGB *leds;
-	static uint8_t numPov;
-	static uint8_t currentActivePov;
 
 	static KINETISK_PIT_CHANNEL_t *rpmTimer;
 	static KINETISK_PIT_CHANNEL_t *segmentTimer;
