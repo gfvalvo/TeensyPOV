@@ -1,21 +1,23 @@
 /*
- * TeensyPOV.h
+ * TeensyPovDisplay.h
  *
  *  Created on: Apr 12, 2018
  *      Author: GFV
  */
 
-#ifndef TEENSYPOV_H_
-#define TEENSYPOV_H_
+#ifndef TEENSYPOVDISPLAY_H_
+#define TEENSYPOVDISPLAY_H_
 
 #include <Arduino.h>
 #define FASTLED_INTERNAL
 #include "FastLED.h"
+#include "TeensyPOV.h"
 
 #if !defined(KINETISK)
 #error Kinetisk required
 #endif
 
+/*
 extern const uint8_t LOG_2_SEGMENTS;
 extern const uint8_t LOG_4_SEGMENTS;
 extern const uint8_t LOG_8_SEGMENTS;
@@ -25,10 +27,9 @@ extern const uint8_t LOG_64_SEGMENTS;
 extern const uint8_t LOG_128_SEGMENTS;
 extern const uint8_t LOG_256_SEGMENTS;
 extern const uint8_t LOG_512_SEGMENTS;
+ */
 
-//#define SIMULATE_RPM
-//#define DEBUG_MODE
-
+/*
 enum TextPosition {
 	TOP, BOTTOM
 };
@@ -50,6 +51,7 @@ struct DisplayStringSpec {
 	uint8_t backgroundColor;
 	bool invert;
 };
+ */
 
 class TeensyPovDisplay {
 private:
@@ -87,14 +89,17 @@ public:
 	void setUpdateCallback(void (*)(TeensyPovDisplay *));
 	void setExpireCallback(void (*)(TeensyPovDisplay *));
 	bool update(void);
+	/*
 	static bool povSetup(uint8_t, CRGB *, uint8_t);
 	static bool rpmGood(void);
 	static uint16_t getNumSegments(void);
 	static uint32_t getLastRotationCount(void);
 	static void setLed(uint16_t, uint16_t, uint32_t);
+
 #ifdef DEBUG_MODE
 	static void debugPrint(void);
 #endif 		//DEBUG_MODE
+	 */
 };
 
-#endif /* TEENSYPOV_H_ */
+#endif /* TEENSYPOVDISPLAY_H_ */

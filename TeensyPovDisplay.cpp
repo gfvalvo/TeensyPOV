@@ -4,9 +4,11 @@
  *  Created on: Apr 12, 2018
  *      Author: GFV
  */
-#include <TeensyPovDisplay.h>
+
+#include "TeensyPovDisplay.h"
 #include "textCharacters.h"
 
+/*
 const uint8_t LOG_2_SEGMENTS = 1;
 const uint8_t LOG_4_SEGMENTS = 2;
 const uint8_t LOG_8_SEGMENTS = 3;
@@ -16,7 +18,8 @@ const uint8_t LOG_64_SEGMENTS = 6;
 const uint8_t LOG_128_SEGMENTS = 7;
 const uint8_t LOG_256_SEGMENTS = 8;
 const uint8_t LOG_512_SEGMENTS = 9;
-
+ */
+/*
 static void dummy_funct(void);
 static void rpmTimerIsr(void);
 static void segmentTimerIsr(void);
@@ -28,10 +31,11 @@ static void allLedsOff(void);
 static void loadPattern(const LedArrayStruct *);
 static void loadColors(const uint32_t *);
 static void setParameters(uint8_t, uint8_t, uint16_t);
-static void loadString(const char *, TextPosition, uint8_t, uint8_t, uint8_t,
+ static void (const char *, TextPosition, uint8_t, uint8_t, uint8_t,
 		bool);
 static void setPixel(uint16_t, uint16_t, uint32_t);
-
+ */
+/*
 #ifndef SIMULATE_RPM
 static const uint32_t maxRevolutionPeriod = 100000UL; // Only run LEDs when > 10 revs / sec (600 RPM)
 #else
@@ -56,7 +60,9 @@ static const uint8_t minGoodRpmCount = 2;
 static uint8_t pixelsPerWord;
 static uint32_t numLeds;
 static CRGB *leds;
+ */
 
+/*
 volatile static uint8_t currentLogNumSegments = 1;
 volatile static uint32_t segmentArray[maxNumSegments][maxColumns];
 volatile static uint32_t colorArray[1 << maxNumColorBits];
@@ -71,6 +77,7 @@ volatile static uint32_t currentTdcDisplaySegment = 0;
 volatile static uint32_t lastRpmTimerReading;
 volatile static uint8_t hallPin;
 
+
 static KINETISK_PIT_CHANNEL_t *rpmTimer, *segmentTimer;
 
 static void (*funct_table[4])() = {dummy_funct, dummy_funct, dummy_funct, dummy_funct};
@@ -80,6 +87,7 @@ static void (*tdcInteruptVector)() = dummy_funct;
 static const uint32_t tdcSimulatorCycles = (F_BUS / 1000000UL) * 52174UL - 1;
 static KINETISK_PIT_CHANNEL_t *tdcSimulator;
 #endif  // SIMULATE_RPM
+
 
 #ifdef DEBUG_MODE
 volatile static bool segmentTimerIsrFire = false;
@@ -91,6 +99,8 @@ volatile static uint32_t lastSegment;
 
 uint8_t TeensyPovDisplay::numPov = 0;
 uint8_t TeensyPovDisplay::currentActivePov = 0;
+
+ */
 
 TeensyPovDisplay::TeensyPovDisplay() {
 	/*
@@ -291,38 +301,6 @@ void TeensyPovDisplay::refresh() {
 	loadPovStructures(false);
 }
 
-void TeensyPovDisplay::loadPovStructures(bool startTiming) {
-	uint8_t index;
-	const DisplayStringSpec *strPtr;
-	if (currentActivePov != idNum) {
-		setParameters(logNumSegments, numColorBits, tdcSegment);
-	}
-
-	loadColors(colorPalette);
-
-	if (image) {
-		loadPattern(image);
-	}
-
-	if (strings) {
-		for (index = 0; index < numStrings; index++) {
-			strPtr = strings + index;
-			loadString(strPtr->characters, strPtr->position, strPtr->topRow,
-					strPtr->textColor, strPtr->backgroundColor, strPtr->invert);
-		}
-	}
-
-	currentActivePov = idNum;
-
-	if (startTiming) {
-		expired = false;
-		durationTimer = millis();
-		rotationTimer = durationTimer;
-		if (activationCallback) {
-			activationCallback(this);
-		}
-	}
-}
 
 void TeensyPovDisplay::setActivationCallback(void (*ptr)(TeensyPovDisplay *)) {
 	/* Set optional callback function to be called when a TeensyPOV object is activated.
@@ -351,46 +329,6 @@ void TeensyPovDisplay::setExpireCallback(void (*ptr)(TeensyPovDisplay *)) {
 	expireCallback = ptr;
 }
 
-void TeensyPovDisplay::setLed(uint16_t segment, uint16_t led, uint32_t value) {
-	/*
-	 * Set a LED directly on the display.
-	 * Parameters:
-	 * 	uint16_t segment -- Rotational segment of the LED, counted clockwise from Top Dead Center. Value between 0 and (Number of Segments)-1
-	 *
-	 * 	uint16_t led -- Radial position of the LED, 0 = innermost.
-	 *
-	 * 	uint32_t value -- Color of the LED expressed as index into current Palette.
-	 *
-	 * Returns:
-	 * 		N/A
-	 */
-	setPixel(segment, led, value);
-}
-
-bool TeensyPovDisplay::rpmGood() {
-	/*
-	 * Report if POV blade is spinning at sufficient rotational speed
-	 * Parameters:
-	 *			None
-	 *  Returns:
-	 * 			true - speed is good
-	 * 			false - otherwise
-	 */
-	return (tdcInteruptVector == tdcIsrActive);
-}
-
-uint32_t TeensyPovDisplay::getLastRotationCount() {
-	/*
-	 * Get duration of last POV blade rotation in units of PIT ticks.
-	 * On a Teensy 3.2 there are 48,000,000 PIT ticks per second.
-	 * This value can be used to compute the blade's rotational speed.
-	 *	Parameters:
-	 *			N/A
-	 *	Returns:
-	 * 			Count of PIT ticks (uint32_t)
-	 */
-	return rpmCycles - lastRpmTimerReading;
-}
 
 bool TeensyPovDisplay::update() {
 	/*
@@ -416,8 +354,9 @@ bool TeensyPovDisplay::update() {
 	if (rotationPeriod > 0) {
 		if (currentMillis - rotationTimer >= rotationPeriod) {
 			rotationTimer += rotationPeriod;
-			currentTdcDisplaySegment = (currentTdcDisplaySegment
-					+ rotationIncrement) & currentSegmentMask;
+			TeensyPOV::currentTdcDisplaySegment =
+					(TeensyPOV::currentTdcDisplaySegment + rotationIncrement)
+							& TeensyPOV::currentSegmentMask;
 		}
 	}
 
@@ -437,24 +376,43 @@ bool TeensyPovDisplay::update() {
 	return false;
 }
 
-uint16_t TeensyPovDisplay::getNumSegments() {
-	return currentNumSegments;
+void TeensyPovDisplay::loadPovStructures(bool startTiming) {
+	uint8_t index;
+	const DisplayStringSpec *strPtr;
+	if (currentActivePov != idNum) {
+		TeensyPOV::setParameters(logNumSegments, numColorBits, tdcSegment);
+	}
+
+	TeensyPOV::loadColors(colorPalette);
+
+	if (image) {
+		TeensyPOV::loadPattern(image);
+	}
+
+	if (strings) {
+		for (index = 0; index < numStrings; index++) {
+			strPtr = strings + index;
+		TeensyPOV::(strPtr->characters, strPtr->position,
+					strPtr->topRow, strPtr->textColor, strPtr->backgroundColor,
+					strPtr->invert);
+		}
+	}
+
+	currentActivePov = idNum;
+
+	if (startTiming) {
+		expired = false;
+		durationTimer = millis();
+		rotationTimer = durationTimer;
+		if (activationCallback) {
+			activationCallback(this);
+		}
+	}
 }
 
+/*
 bool TeensyPovDisplay::povSetup(uint8_t hPin, CRGB *ledPtr, uint8_t num) {
-	/*
-	 * Initialize the POV setup.
-	 * Parameters:
-	 * 	uint8_t hPin -- Pin that the (active low) Hall Effect sensor is connected to.
-	 *
-	 * 	CRGB *ledPtr -- Pointer to the array of FastLED CRGB objects. Before calling this method, the CRBG objects should be registered
-	 * 		with FastLED using the FastLED.addLeds() method.
-	 *
-	 * 	uint8_t num -- Number of LEDs
-	 *
-	 * 	Returns:
-	 * 		true if num < maxNumLeds
-	 */
+
 	const uint8_t rpmTimerIndex = 0;
 	const uint8_t segmentTimerIndex = 1;
 
@@ -521,6 +479,7 @@ bool TeensyPovDisplay::povSetup(uint8_t hPin, CRGB *ledPtr, uint8_t num) {
 	return true;
 }
 
+
 static void loadPattern(const LedArrayStruct *patternStruct) {
 	uint32_t row, column;
 
@@ -531,6 +490,7 @@ static void loadPattern(const LedArrayStruct *patternStruct) {
 		}
 	}
 }
+
 
 static void loadString(const char *string, TextPosition pos, uint8_t topLed,
 		uint8_t color, uint8_t background, bool invert) {
@@ -625,14 +585,18 @@ static void loadString(const char *string, TextPosition pos, uint8_t topLed,
 		bufferPosition += bufferPositionDelta;
 	}
 }
+ */
 
+/*
 static void loadColors(const uint32_t *cPtr) {
 	uint8_t index1;
 	for (index1 = 0; index1 < (1 << currentNumColorBits); index1++) {
 		colorArray[index1] = *(cPtr + index1);
 	}
 }
+ */
 
+/*
 static void setParameters(uint8_t logSegments, uint8_t colorBits,
 		uint16_t tdcSegment) {
 	segmentTimer->TCTRL = 0;		// Disable PIT will be enabled in tdcISR()
@@ -674,7 +638,9 @@ static void setParameters(uint8_t logSegments, uint8_t colorBits,
 	tdcInteruptVector = tdcIsrInit;
 	rpmTimer->TCTRL = 3;							// Enable PIT and interrupt
 }
+ */
 
+/*
 static void allLedsOff() {
 	uint32_t index1;
 	for (index1 = 0; index1 < numLeds; index1++) {
@@ -682,6 +648,7 @@ static void allLedsOff() {
 	}
 	FastLED.show();
 }
+
 
 static void updateLeds() {
 	uint32_t currentWord, bitCounter;
@@ -717,10 +684,15 @@ static void setPixel(uint16_t segment, uint16_t pixel, uint32_t value) {
 	segmentArray[segment][pixelWord] &= (~pixelMask);
 	segmentArray[segment][pixelWord] |= value;
 }
+ */
 
+
+
+/*
 static void mainTdcISR() {
 	tdcInteruptVector();
 }
+
 
 static void tdcIsrInit(void) {
 	// This ISR fires every time blade passes Hall detector (Top Dead Center)
@@ -736,6 +708,7 @@ static void tdcIsrInit(void) {
 		tdcInteruptVector = tdcIsrActive;
 	}
 }
+
 
 static void tdcIsrActive(void) {
 	// This ISR fires every time blade passes Hall detector (Top Dead Center)
@@ -765,6 +738,7 @@ static void tdcIsrActive(void) {
 	currentDisplaySegment = (currentDisplaySegment + 1) & currentSegmentMask;
 }
 
+
 static void rpmTimerIsr() {
 	// This ISR fires if RPM is too low. Stop running the LEDs
 #ifdef DEBUG_MODE
@@ -788,6 +762,7 @@ static void rpmTimerIsr() {
 	tdcInteruptVector = tdcIsrInit;
 }
 
+
 static void segmentTimerIsr() {
 	// This ISR fires for every segment position
 #ifdef DEBUG_MODE
@@ -805,8 +780,12 @@ static void segmentTimerIsr() {
 	}
 }
 
+ */
+
+/*
 static void dummy_funct() {
 }
+
 
 void pit0_isr() {
 	PIT_TFLG0 = 1;
@@ -827,7 +806,9 @@ void pit3_isr() {
 	PIT_TFLG3 = 1;
 	funct_table[3]();
 }
+ */
 
+/*
 #ifdef DEBUG_MODE
 void TeensyPovDisplay::debugPrint() {
 	uint32_t localLast;
@@ -892,3 +873,4 @@ void TeensyPovDisplay::debugPrint() {
 	}
 }
 #endif  // DEBUG_MODE
+ */
