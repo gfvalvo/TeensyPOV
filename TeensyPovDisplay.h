@@ -51,7 +51,7 @@ struct DisplayStringSpec {
 	bool invert;
 };
 
-class TeensyPOV {
+class TeensyPovDisplay {
 private:
 	uint8_t numColorBits = 0;
 	uint8_t logNumSegments = 1;
@@ -66,15 +66,15 @@ private:
 	uint8_t idNum;
 	bool expired = false;
 	void loadPovStructures(bool);
-	void (*activationCallback)(TeensyPOV *) = nullptr;
-	void (*updateCallback)(TeensyPOV *) = nullptr;
-	void (*expireCallback)(TeensyPOV *) = nullptr;
+	void (*activationCallback)(TeensyPovDisplay *) = nullptr;
+	void (*updateCallback)(TeensyPovDisplay *) = nullptr;
+	void (*expireCallback)(TeensyPovDisplay *) = nullptr;
 
 	static uint8_t numPov;
 	static uint8_t currentActivePov;
 
 public:
-	TeensyPOV();
+	TeensyPovDisplay();
 	void load(const LedArrayStruct *);
 	void load(const LedArrayStruct *, const DisplayStringSpec *, uint8_t);
 	void load(const DisplayStringSpec *, uint8_t);
@@ -83,9 +83,9 @@ public:
 	void refresh();
 	void setDisplay(uint8_t, uint8_t, uint16_t, const uint32_t *);
 	void setTiming(uint32_t, uint32_t, int16_t);
-	void setActivationCallback(void (*)(TeensyPOV *));
-	void setUpdateCallback(void (*)(TeensyPOV *));
-	void setExpireCallback(void (*)(TeensyPOV *));
+	void setActivationCallback(void (*)(TeensyPovDisplay *));
+	void setUpdateCallback(void (*)(TeensyPovDisplay *));
+	void setExpireCallback(void (*)(TeensyPovDisplay *));
 	bool update(void);
 	static bool povSetup(uint8_t, CRGB *, uint8_t);
 	static bool rpmGood(void);

@@ -4,7 +4,7 @@
  *  Created on: Apr 12, 2018
  *      Author: GFV
  */
-#include "TeensyPOV.h"
+#include <TeensyPovDisplay.h>
 #include "textCharacters.h"
 
 const uint8_t LOG_2_SEGMENTS = 1;
@@ -89,17 +89,17 @@ volatile static uint8_t tdcIsrFire = 0;
 volatile static uint32_t lastSegment;
 #endif  // DEBUG_MODE
 
-uint8_t TeensyPOV::numPov = 0;
-uint8_t TeensyPOV::currentActivePov = 0;
+uint8_t TeensyPovDisplay::numPov = 0;
+uint8_t TeensyPovDisplay::currentActivePov = 0;
 
-TeensyPOV::TeensyPOV() {
+TeensyPovDisplay::TeensyPovDisplay() {
 	/*
 	 * Constructor
 	 */
 	idNum = ++numPov;
 }
 
-void TeensyPOV::load(const LedArrayStruct *pattern) {
+void TeensyPovDisplay::load(const LedArrayStruct *pattern) {
 	/*
 	 * Load a TeensyPOV object with a bit pattern image
 	 * Parameters:
@@ -127,7 +127,7 @@ void TeensyPOV::load(const LedArrayStruct *pattern) {
 	expireCallback = nullptr;
 }
 
-void TeensyPOV::load(const LedArrayStruct *pattern,
+void TeensyPovDisplay::load(const LedArrayStruct *pattern,
 		const DisplayStringSpec *strArray, uint8_t n) {
 	/*
 	 * Load a TeensyPOV object with a bit pattern image and text strings
@@ -161,7 +161,7 @@ void TeensyPOV::load(const LedArrayStruct *pattern,
 	expireCallback = nullptr;
 }
 
-void TeensyPOV::load(const DisplayStringSpec *strArray, uint8_t n) {
+void TeensyPovDisplay::load(const DisplayStringSpec *strArray, uint8_t n) {
 	/*
 	 * Load a TeensyPOV object with text strings
 	 * Parameters:
@@ -188,7 +188,7 @@ void TeensyPOV::load(const DisplayStringSpec *strArray, uint8_t n) {
 	expireCallback = nullptr;
 }
 
-void TeensyPOV::load() {
+void TeensyPovDisplay::load() {
 	/*
 	 * Load an empty TeensyPOV object. Would be used if no bitmap image or text is desired.
 	 * Pixels would be set by the main program using the setLed() method.
@@ -213,7 +213,7 @@ void TeensyPOV::load() {
 	expireCallback = nullptr;
 }
 
-void TeensyPOV::setDisplay(uint8_t logSeg, uint8_t cBits, uint16_t tdc,
+void TeensyPovDisplay::setDisplay(uint8_t logSeg, uint8_t cBits, uint16_t tdc,
 		const uint32_t *colors) {
 	/*
 	 * Load the POV parameters for a TeensyPOV object that does not contain a bitmap image (i.e. a LedArrayStruct).
@@ -237,7 +237,7 @@ void TeensyPOV::setDisplay(uint8_t logSeg, uint8_t cBits, uint16_t tdc,
 	colorPalette = colors;
 }
 
-void TeensyPOV::setTiming(uint32_t duration, uint32_t rotation,
+void TeensyPovDisplay::setTiming(uint32_t duration, uint32_t rotation,
 		int16_t tdcDelta) {
 	/*
 	 * Set timing for dynamic TeensyPOV objects. Optional, all values are set to their default values by the load() method.
@@ -260,7 +260,7 @@ void TeensyPOV::setTiming(uint32_t duration, uint32_t rotation,
 	rotationIncrement = tdcDelta;
 }
 
-void TeensyPOV::activate() {
+void TeensyPovDisplay::activate() {
 	/*
 	 * Display a TeensyPOV object on the POV LEDs.
 	 * Resets the duration and rotation timers
@@ -275,7 +275,7 @@ void TeensyPOV::activate() {
 	loadPovStructures(true);
 }
 
-void TeensyPOV::refresh() {
+void TeensyPovDisplay::refresh() {
 	/*
 	 * Refresh the TeensyPOV object on the POV LEDs after changing text, bit image, palette, etc.
 	 * Does not resets the duration and rotation timers
@@ -291,7 +291,7 @@ void TeensyPOV::refresh() {
 	loadPovStructures(false);
 }
 
-void TeensyPOV::loadPovStructures(bool startTiming) {
+void TeensyPovDisplay::loadPovStructures(bool startTiming) {
 	uint8_t index;
 	const DisplayStringSpec *strPtr;
 	if (currentActivePov != idNum) {
@@ -324,7 +324,7 @@ void TeensyPOV::loadPovStructures(bool startTiming) {
 	}
 }
 
-void TeensyPOV::setActivationCallback(void (*ptr)(TeensyPOV *)) {
+void TeensyPovDisplay::setActivationCallback(void (*ptr)(TeensyPovDisplay *)) {
 	/* Set optional callback function to be called when a TeensyPOV object is activated.
 	 *  Parameters:
 	 *  	void (*ptr)(TeensyPOV *) - pointer to the function to be called. The function must take as an argument a pointer to the
@@ -333,7 +333,7 @@ void TeensyPOV::setActivationCallback(void (*ptr)(TeensyPOV *)) {
 	activationCallback = ptr;
 }
 
-void TeensyPOV::setUpdateCallback(void (*ptr)(TeensyPOV *)) {
+void TeensyPovDisplay::setUpdateCallback(void (*ptr)(TeensyPovDisplay *)) {
 	/* Set optional callback function to be called when a TeensyPOV object is updated.
 	 *  Parameters:
 	 *  	void (*ptr)(TeensyPOV *) - pointer to the function to be called. The function must take as an argument a pointer to the
@@ -342,7 +342,7 @@ void TeensyPOV::setUpdateCallback(void (*ptr)(TeensyPOV *)) {
 	updateCallback = ptr;
 }
 
-void TeensyPOV::setExpireCallback(void (*ptr)(TeensyPOV *)) {
+void TeensyPovDisplay::setExpireCallback(void (*ptr)(TeensyPovDisplay *)) {
 	/* Set optional callback function to be called when a TeensyPOV object expires.
 	 *  Parameters:
 	 *  	void (*ptr)(TeensyPOV *) - pointer to the function to be called. The function must take as an argument a pointer to the
@@ -351,7 +351,7 @@ void TeensyPOV::setExpireCallback(void (*ptr)(TeensyPOV *)) {
 	expireCallback = ptr;
 }
 
-void TeensyPOV::setLed(uint16_t segment, uint16_t led, uint32_t value) {
+void TeensyPovDisplay::setLed(uint16_t segment, uint16_t led, uint32_t value) {
 	/*
 	 * Set a LED directly on the display.
 	 * Parameters:
@@ -367,7 +367,7 @@ void TeensyPOV::setLed(uint16_t segment, uint16_t led, uint32_t value) {
 	setPixel(segment, led, value);
 }
 
-bool TeensyPOV::rpmGood() {
+bool TeensyPovDisplay::rpmGood() {
 	/*
 	 * Report if POV blade is spinning at sufficient rotational speed
 	 * Parameters:
@@ -379,7 +379,7 @@ bool TeensyPOV::rpmGood() {
 	return (tdcInteruptVector == tdcIsrActive);
 }
 
-uint32_t TeensyPOV::getLastRotationCount() {
+uint32_t TeensyPovDisplay::getLastRotationCount() {
 	/*
 	 * Get duration of last POV blade rotation in units of PIT ticks.
 	 * On a Teensy 3.2 there are 48,000,000 PIT ticks per second.
@@ -392,7 +392,7 @@ uint32_t TeensyPOV::getLastRotationCount() {
 	return rpmCycles - lastRpmTimerReading;
 }
 
-bool TeensyPOV::update() {
+bool TeensyPovDisplay::update() {
 	/*
 	 * Determines if duration of TeensyPOV object has expired and performs specified rotation.
 	 *	Parameters:
@@ -437,11 +437,11 @@ bool TeensyPOV::update() {
 	return false;
 }
 
-uint16_t TeensyPOV::getNumSegments() {
+uint16_t TeensyPovDisplay::getNumSegments() {
 	return currentNumSegments;
 }
 
-bool TeensyPOV::povSetup(uint8_t hPin, CRGB *ledPtr, uint8_t num) {
+bool TeensyPovDisplay::povSetup(uint8_t hPin, CRGB *ledPtr, uint8_t num) {
 	/*
 	 * Initialize the POV setup.
 	 * Parameters:
@@ -829,7 +829,7 @@ void pit3_isr() {
 }
 
 #ifdef DEBUG_MODE
-void TeensyPOV::debugPrint() {
+void TeensyPovDisplay::debugPrint() {
 	uint32_t localLast;
 	if (missedSegment) {
 		localLast = lastSegment;
