@@ -3,7 +3,7 @@
 
 extern const LedArrayStruct colorCrossStruct;
 
-static const uint8_t logNumSegments = 8;
+static const uint8_t logNumSegments = 7;
 static const uint32_t numColorBits = 3;
 static const uint32_t tdcDisplaySegment = 0;
 static const uint32_t numColumns = 4;
