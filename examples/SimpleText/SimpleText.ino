@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include "TeensyPOV.h"
+#include "TeensyPovDisplay.h"
 
 #define NUM_LEDS 36
 
@@ -23,7 +23,7 @@ CRGB leds[numLeds];
 
 const uint32_t palette[] = { CRGB::Black, CRGB::Red, CRGB::Green, CRGB::Blue};
 
-TeensyPOV display;
+TeensyPovDisplay display;
 
 const DisplayStringSpec stringArray[] = { { "HELLO", TOP, 35, 1, 0,
 		false }, { "WORLD", BOTTOM, 35, 3, 0, true } };
@@ -48,4 +48,3 @@ void setup() {
 }
 
 void loop() {}
-

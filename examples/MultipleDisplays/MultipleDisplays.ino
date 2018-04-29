@@ -1,15 +1,15 @@
 #include <Arduino.h>
-#include "TeensyPOV.h"
+#include "TeensyPovDisplay.h"
 
 #define NUM_LEDS 36
 
 extern const LedArrayStruct pictureStruct;
 
-void switchDisplay(TeensyPOV *);
-void loadRose(TeensyPOV *);
-void loadLimacons(TeensyPOV *);
-void startRpmUpdateTimer(TeensyPOV *);
-void updateRpm(TeensyPOV *);
+void switchDisplay(TeensyPovDisplay *);
+void loadRose(TeensyPovDisplay *);
+void loadLimacons(TeensyPovDisplay *);
+void startRpmUpdateTimer(TeensyPovDisplay *);
+void updateRpm(TeensyPovDisplay *);
 
 const uint8_t clockPin = 13;
 const uint8_t dataPin = 11;
@@ -24,7 +24,7 @@ uint8_t currentDisplay = 0;
 const uint32_t palette[] = { CRGB::Black, CRGB::Fuchsia, CRGB::Red,
 		CRGB::Yellow, CRGB::Green, CRGB::Cyan, CRGB::Blue, CRGB::Purple };
 
-TeensyPOV display[numDisplays];
+TeensyPovDisplay display[numDisplays];
 
 char charBuffer[10];
 
@@ -63,19 +63,19 @@ void setup() {
 	display[0].setExpireCallback(switchDisplay);
 
 	display[1].load(stringArray_1, numStrings_1);
-	display[1].setDisplay(LOG_256_SEGMENTS, numColorBits, tdcSegment,
+	display[1].setDisplay(TeensyPOV::LOG_256_SEGMENTS, numColorBits, tdcSegment,
 			palette);
 	display[1].setTiming(10000, 0, 0);
 	display[1].setExpireCallback(switchDisplay);
 
 	display[2].load(stringArray_2, numStrings_2);
-	display[2].setDisplay(LOG_128_SEGMENTS, numColorBits, tdcSegment,
+	display[2].setDisplay(TeensyPOV::LOG_128_SEGMENTS, numColorBits, tdcSegment,
 			palette);
 	display[2].setTiming(15000, 100, -1);
 	display[2].setExpireCallback(switchDisplay);
 
 	display[3].load(stringArray_3, numStrings_3);
-	display[3].setDisplay(LOG_128_SEGMENTS, numColorBits, tdcSegment,
+	display[3].setDisplay(TeensyPOV::LOG_128_SEGMENTS, numColorBits, tdcSegment,
 			palette);
 	display[3].setTiming(10000, 0, 0);
 	display[3].setActivationCallback(startRpmUpdateTimer);
@@ -83,14 +83,14 @@ void setup() {
 	display[3].setExpireCallback(switchDisplay);
 
 	display[4].load();
-	display[4].setDisplay(LOG_128_SEGMENTS, numColorBits, tdcSegment,
+	display[4].setDisplay(TeensyPOV::LOG_128_SEGMENTS, numColorBits, tdcSegment,
 			palette);
 	display[4].setTiming(10000, 30, 1);
 	display[4].setActivationCallback(loadLimacons);
 	display[4].setExpireCallback(switchDisplay);
 
 	display[5].load();
-	display[5].setDisplay(LOG_512_SEGMENTS, numColorBits, tdcSegment,
+	display[5].setDisplay(TeensyPOV::LOG_512_SEGMENTS, numColorBits, tdcSegment,
 			palette);
 	display[5].setTiming(10000, 75, -1);
 	display[5].setActivationCallback(loadRose);
@@ -103,22 +103,16 @@ void setup() {
 }
 
 void loop() {
-
 	display[currentDisplay].update();
-
-#ifdef DEBUG_MODE
-	TeensyPOV::debugPrint();
-#endif
-
 }
 
-void switchDisplay(TeensyPOV *ptr) {
+void switchDisplay(TeensyPovDisplay *ptr) {
 	currentDisplay++;
 	currentDisplay %= numDisplays;
 	display[currentDisplay].activate();
 }
 
-void loadLimacons(TeensyPOV *ptr) {
+void loadLimacons(TeensyPovDisplay *ptr) {
 	const uint8_t colorSelect = (1 << numColorBits) - 1;
 	const float twicePi = 2.0 * 3.14159;
 	const float halfPi = 3.14159 / 2.0;
@@ -145,11 +139,11 @@ void loadLimacons(TeensyPOV *ptr) {
 		}
 		pixel = radius + 0.5;
 		color = segment % colorSelect + 1;
-		TeensyPOV::setLed(displaySegment, pixel, color);
+		TeensyPOV::setPixel(displaySegment, pixel, color);
 	}
 }
 
-void loadRose(TeensyPOV *ptr) {
+void loadRose(TeensyPovDisplay *ptr) {
 	const uint8_t colorSelect = (1 << numColorBits) - 1;
 	const float twicePi = 2.0 * 3.14159;
 	const float halfPi = 3.14159 / 2.0;
@@ -176,18 +170,18 @@ void loadRose(TeensyPOV *ptr) {
 		}
 		pixel = radius + 0.5;
 		color = segment % colorSelect + 1;
-		TeensyPOV::setLed(displaySegment, pixel, color);
+		TeensyPOV::setPixel(displaySegment, pixel, color);
 	}
 }
 
 uint32_t rpmUpdateTimer;
 const uint32_t rpmUpdate = 50;
 
-void startRpmUpdateTimer(TeensyPOV *ptr) {
+void startRpmUpdateTimer(TeensyPovDisplay *ptr) {
 	rpmUpdateTimer = millis() - rpmUpdate;
 }
 
-void updateRpm(TeensyPOV *ptr) {
+void updateRpm(TeensyPovDisplay *ptr) {
 	static const uint32_t rpmConversion = F_BUS * 60UL;
 	int rpm;
 	if (millis() - rpmUpdateTimer >= rpmUpdate) {

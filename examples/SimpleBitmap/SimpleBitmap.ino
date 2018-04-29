@@ -1,5 +1,8 @@
-#include "TeensyPOV.h"
-#include "SimpleBitmap.h"
+#include "TeensyPovDisplay.h"
+
+#define NUM_LEDS 36
+
+extern const LedArrayStruct colorCrossStruct;
 
 const uint8_t clockPin = 13;
 const uint8_t dataPin = 11;
@@ -7,7 +10,7 @@ const uint8_t hallPin = 3;
 const uint32_t numLeds = NUM_LEDS;
 
 CRGB leds[numLeds];
-TeensyPOV display;
+TeensyPovDisplay display;
 
 void setup() {
   Serial.begin(115200);

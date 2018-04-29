@@ -1,15 +1,7 @@
 #include <Arduino.h>
-#include "TeensyPOV.h"
+#include "TeensyPovDisplay.h"
 
 #define NUM_LEDS 36
-
-extern const LedArrayStruct pictureStruct;
-
-void switchDisplay(TeensyPOV *);
-void loadRose(TeensyPOV *);
-void loadLimacons(TeensyPOV *);
-void startRpmUpdateTimer(TeensyPOV *);
-void updateRpm(TeensyPOV *);
 
 const uint8_t clockPin = 13;
 const uint8_t dataPin = 11;
@@ -23,7 +15,7 @@ CRGB leds[numLeds];
 
 const uint32_t palette[] = { CRGB::Black, CRGB::Red, CRGB::Green, CRGB::Blue };
 
-TeensyPOV display;
+TeensyPovDisplay display;
 
 const DisplayStringSpec stringArray[] = { { "HELLO", TOP, 35, 1, 0, false }, {
 		"WORLD", BOTTOM, 35, 3, 0, true } };
