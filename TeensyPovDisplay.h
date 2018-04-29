@@ -17,42 +17,6 @@
 #error Kinetisk required
 #endif
 
-/*
-extern const uint8_t LOG_2_SEGMENTS;
-extern const uint8_t LOG_4_SEGMENTS;
-extern const uint8_t LOG_8_SEGMENTS;
-extern const uint8_t LOG_16_SEGMENTS;
-extern const uint8_t LOG_32_SEGMENTS;
-extern const uint8_t LOG_64_SEGMENTS;
-extern const uint8_t LOG_128_SEGMENTS;
-extern const uint8_t LOG_256_SEGMENTS;
-extern const uint8_t LOG_512_SEGMENTS;
- */
-
-/*
-enum TextPosition {
-	TOP, BOTTOM
-};
-
-struct LedArrayStruct {
-	const uint32_t *array;
-	const uint32_t *colors;
-	uint32_t numColorBits;
-	uint8_t logNumSegments;
-	uint32_t columns;
-	uint32_t tdcDisplaySegment;
-};
-
-struct DisplayStringSpec {
-	const char *characters;
-	TextPosition position;
-	uint8_t topRow;
-	uint8_t textColor;
-	uint8_t backgroundColor;
-	bool invert;
-};
- */
-
 class TeensyPovDisplay {
 private:
 	uint8_t numColorBits = 0;
@@ -89,17 +53,6 @@ public:
 	void setUpdateCallback(void (*)(TeensyPovDisplay *));
 	void setExpireCallback(void (*)(TeensyPovDisplay *));
 	bool update(void);
-	/*
-	static bool povSetup(uint8_t, CRGB *, uint8_t);
-	static bool rpmGood(void);
-	static uint16_t getNumSegments(void);
-	static uint32_t getLastRotationCount(void);
-	static void setLed(uint16_t, uint16_t, uint32_t);
-
-#ifdef DEBUG_MODE
-	static void debugPrint(void);
-#endif 		//DEBUG_MODE
-	 */
 };
 
 #endif /* TEENSYPOVDISPLAY_H_ */

@@ -5,7 +5,6 @@
  *      Author: GFV
  */
 #include "TeensyPOV.h"
-#include "TeensyPovDisplay.h"
 #include "textCharacters.h"
 
 static void mainTdcISR(void);
@@ -255,7 +254,7 @@ void TeensyPOV::loadString(const char *string, TextPosition pos, uint8_t topLed,
 	physicalSegment = virtualSegment & currentSegmentMask;
 
 	for (charCounter = 0; charCounter < len; charCounter++) {
-		getMatrix(*bufferPosition, charMatrix, invert);
+	textCharacters::getMatrix(*bufferPosition, charMatrix, invert);
 
 		for (pixelCounter = startLed; pixelCounter <= stopLed; pixelCounter++) {
 			setPixel(physicalSegment, pixelCounter, background);

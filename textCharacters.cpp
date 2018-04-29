@@ -2,15 +2,10 @@
 // Lowest index = leftmost column of character
 // Each element in the data array is the state of one column in the letter.
 
-#include <stdint.h>
 #include "textCharacters.h"
 
-struct pov_char {
-	uint8_t data[5];
-};
-
-static pov_char const font_numbers[] = { { 0b0111110, 0b1000101, 0b1001001,
-		0b1010001, 0b0111110, }, // 0
+const pov_char textCharacters::font_numbers[] = { { 0b0111110, 0b1000101,
+		0b1001001, 0b1010001, 0b0111110, }, // 0
 		{ 0b0000000, 0b0100001, 0b1111111, 0b0000001, 0b0000000, }, // 1
 		{ 0b0100001, 0b1000011, 0b1000101, 0b1001001, 0b0110001, }, // 2
 		{ 0b1000010, 0b1000001, 0b1010001, 0b1101001, 0b1000110, }, // 3
@@ -20,11 +15,10 @@ static pov_char const font_numbers[] = { { 0b0111110, 0b1000101, 0b1001001,
 		{ 0b1100000, 0b1000000, 0b1000111, 0b1001000, 0b1110000, }, // 7
 		{ 0b0110110, 0b1001001, 0b1001001, 0b1001001, 0b0110110, }, // 8
 		{ 0b0110000, 0b1001001, 0b1001001, 0b1001010, 0b0111100, }, // 9
-
 		};
 
-static pov_char const font_uppercase[] = { { 0b0111111, 0b1000100, 0b1000100,
-		0b1000100, 0b0111111, }, // A
+const pov_char textCharacters::font_uppercase[] = { { 0b0111111, 0b1000100,
+		0b1000100, 0b1000100, 0b0111111, }, // A
 		{ 0b1111111, 0b1001001, 0b1001001, 0b1001001, 0b0110110, }, // B
 		{ 0b0111110, 0b1000001, 0b1000001, 0b1000001, 0b0100010, }, // C
 		{ 0b1111111, 0b1000001, 0b1000001, 0b0100010, 0b0011100, }, // D
@@ -53,8 +47,8 @@ static pov_char const font_uppercase[] = { { 0b0111111, 0b1000100, 0b1000100,
 
 		};
 
-static pov_char const font_lowercase[] = { { 0b0000010, 0b0010101, 0b0010101,
-		0b0010101, 0b0001111, }, // a
+const pov_char textCharacters::font_lowercase[] = { { 0b0000010, 0b0010101,
+		0b0010101, 0b0010101, 0b0001111, }, // a
 		{ 0b1111111, 0b0001001, 0b0010001, 0b0010001, 0b0001110, }, // b
 		{ 0b0001110, 0b0010001, 0b0010001, 0b0010001, 0b0000010, }, // c
 		{ 0b0001110, 0b0010001, 0b0010001, 0b0001001, 0b1111111, }, // d
@@ -83,10 +77,10 @@ static pov_char const font_lowercase[] = { { 0b0000010, 0b0010101, 0b0010101,
 
 		};
 
-static pov_char const font_space = { 0b0000000, 0b0000000, 0b0000000, 0b0000000,
-		0b0000000, };
+const pov_char textCharacters::font_space = { 0b0000000, 0b0000000, 0b0000000,
+		0b0000000, 0b0000000, };
 
-void getMatrix(const char textChar, uint8_t *matrixBuffer, bool invert) {
+void textCharacters::getMatrix(const char textChar, uint8_t *matrixBuffer, bool invert) {
 	const pov_char *currentCharMatrix;
 	int8_t index1, index2;
 	uint8_t orignalColumn, flippedColumn;
