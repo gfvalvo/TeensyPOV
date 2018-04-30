@@ -1,5 +1,5 @@
 /*
- * TeensyPOV.cpp
+ * TeensyPovDisplay.cpp
  *
  *  Created on: Apr 12, 2018
  *      Author: GFV

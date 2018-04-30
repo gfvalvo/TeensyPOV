@@ -14,7 +14,7 @@ void updateRpm(TeensyPovDisplay *);
 const uint8_t clockPin = 13;
 const uint8_t dataPin = 11;
 const uint8_t hallPin = 3;
-const uint8_t numColorBits = 3;
+const uint8_t numColorBits = TeensyPOV::COLOR_BITS_4;
 const uint8_t numDisplays = 6;
 const uint16_t tdcSegment = 0;
 const uint32_t numLeds = NUM_LEDS;
@@ -22,7 +22,9 @@ CRGB leds[numLeds];
 uint8_t currentDisplay = 0;
 
 const uint32_t palette[] = { CRGB::Black, CRGB::Fuchsia, CRGB::Red,
-		CRGB::Yellow, CRGB::Green, CRGB::Cyan, CRGB::Blue, CRGB::Purple };
+		CRGB::Yellow, CRGB::Green, CRGB::Cyan, CRGB::Blue, CRGB::Purple,
+		CRGB::Salmon, CRGB::YellowGreen, CRGB::Turquoise, CRGB::SlateBlue,
+		CRGB::OliveDrab, CRGB::Navy, CRGB::LightPink, CRGB::DarkOrchid };
 
 TeensyPovDisplay display[numDisplays];
 

@@ -50,6 +50,11 @@ public:
 	static const uint8_t LOG_256_SEGMENTS = 8;
 	static const uint8_t LOG_512_SEGMENTS = 9;
 
+	static const uint8_t COLOR_BITS_1 = 1;
+	static const uint8_t COLOR_BITS_2 = 2;
+	static const uint8_t COLOR_BITS_4 = 4;
+	static const uint8_t COLOR_BITS_8 = 8;
+
 	static bool povSetup(uint8_t, CRGB *, uint8_t);
 	static bool rpmGood(void);
 	static uint16_t getNumSegments(void);
@@ -85,17 +90,13 @@ private:
 	static const uint32_t rpmCycles = (F_BUS / 1000000UL) * maxRevolutionPeriod
 			- 1;
 
-	static const uint32_t maxNumLeds = 50;
-	static const uint32_t maxNumColorBits = 6;
+	static const uint32_t maxNumLeds = 48;
+	static const uint32_t maxNumColorBits = COLOR_BITS_8;
+	static const uint32_t bitCountLoad = 0x80000000;
 	static const uint32_t maxNumSegments = 1 << LOG_512_SEGMENTS;
 	static const uint32_t bitsPerSegment = maxNumLeds * maxNumColorBits;
-	static const uint32_t bitsPerWord =
-			((maxNumColorBits == 3) || (maxNumColorBits == 5)
-					|| (maxNumColorBits == 6)) ? 30 : 32;
-	static const uint32_t remainderBits = bitsPerSegment % bitsPerWord;
-	static const uint32_t extraWord = (remainderBits != 0) ? 1 : 0;
-	static const uint32_t maxColumns = (bitsPerSegment / bitsPerWord)
-			+ extraWord;
+	static const uint32_t bitsPerWord = 32;
+	static const uint32_t maxColumns = (bitsPerSegment / bitsPerWord);
 	static const uint8_t maxTextChars = maxNumSegments / (2 * 7);
 	static const uint8_t minGoodRpmCount = 2;
 
@@ -116,7 +117,6 @@ private:
 	volatile static uint32_t currentNumColorBits;
 	volatile static uint32_t currentNumSegments;
 	volatile static uint32_t currentSegmentMask;
-	volatile static uint32_t bitCountLoad;
 	volatile static uint32_t currentColorMask;
 	volatile static uint32_t goodRpmCount;
 	volatile static uint32_t currentDisplaySegment;

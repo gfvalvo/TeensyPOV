@@ -6,9 +6,9 @@
 const uint8_t clockPin = 13;
 const uint8_t dataPin = 11;
 const uint8_t hallPin = 3;
-const uint8_t numColorBits = 2;
+const uint8_t numColorBits = TeensyPOV::COLOR_BITS_2;
 uint8_t tdcSegment = 0;
-const uint16_t logNumSegements = 7;
+const uint16_t logNumSegements = TeensyPOV::LOG_128_SEGMENTS;
 const uint16_t numLeds = NUM_LEDS;
 
 CRGB leds[numLeds];
@@ -43,4 +43,3 @@ void setup() {
 void loop() {
 	display.update();
 }
-

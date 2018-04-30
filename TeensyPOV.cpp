@@ -28,7 +28,6 @@ volatile uint32_t TeensyPOV::colorArray[1 << maxNumColorBits];
 volatile uint32_t TeensyPOV::currentNumColorBits = 0;
 volatile uint32_t TeensyPOV::currentNumSegments = 1 << currentLogNumSegments;
 volatile uint32_t TeensyPOV::currentSegmentMask = currentNumSegments - 1;
-volatile uint32_t TeensyPOV::bitCountLoad;
 volatile uint32_t TeensyPOV::currentColorMask;
 volatile uint32_t TeensyPOV::goodRpmCount;
 volatile uint32_t TeensyPOV::currentDisplaySegment;
@@ -306,22 +305,6 @@ void TeensyPOV::setParameters(uint8_t logSegments, uint8_t colorBits,
 	currentNumColorBits = colorBits;
 	currentTdcDisplaySegment = tdcSegment;
 	currentColorMask = (1 << currentNumColorBits) - 1;
-	switch (currentNumColorBits) {
-	case 1:
-	case 2:
-	case 4:
-		bitCountLoad = 0x80000000;
-		break;
-
-	case 3:
-	case 5:
-	case 6:
-		bitCountLoad = 0x20000000;
-		break;
-
-	default:
-		break;
-	}
 	pixelsPerWord = 32 / currentNumColorBits;
 
 	for (uint16_t i = 0; i < maxNumSegments; i++) {
