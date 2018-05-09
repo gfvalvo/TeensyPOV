@@ -13,7 +13,7 @@ void updateRpm(TeensyPovDisplay *);
 
 const uint8_t clockPin = 13;
 const uint8_t dataPin = 11;
-const uint8_t hallPin = 3;
+const uint8_t hallPin = 21;
 const uint8_t numColorBits = TeensyPOV::COLOR_BITS_4;
 const uint8_t numDisplays = 6;
 const uint16_t tdcSegment = 0;
@@ -41,7 +41,8 @@ const uint8_t numStrings_1 = sizeof(stringArray_1) / sizeof(DisplayStringSpec);
 
 const DisplayStringSpec stringArray_2[] = { { "HELLO", TOP, 35, 2, 0, false }, {
 		"WORLD", TOP, 25, 3, 0, false },
-		{ "POV", BOTTOM, 25, 7, 0, false }, { "Teensy", BOTTOM, 35, 5, 0,
+		{ "POV", BOTTOM, 25, 7, 0, false }, {
+		"TEENSY", BOTTOM, 35, 5, 0,
 				false } };
 const uint8_t numStrings_2 = sizeof(stringArray_2) / sizeof(DisplayStringSpec);
 

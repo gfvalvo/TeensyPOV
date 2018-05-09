@@ -262,7 +262,7 @@ bool TeensyPovDisplay::update() {
 	if (rotationPeriod > 0) {
 		if (currentMillis - rotationTimer >= rotationPeriod) {
 			rotationTimer += rotationPeriod;
-			TeensyPOV::currentTdcDisplaySegment =
+			TeensyPOV::updateTdcDisplaySegment =
 					(TeensyPOV::currentTdcDisplaySegment + rotationIncrement)
 							& TeensyPOV::currentSegmentMask;
 		}

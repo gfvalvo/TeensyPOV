@@ -121,6 +121,7 @@ private:
 	volatile static uint32_t goodRpmCount;
 	volatile static uint32_t currentDisplaySegment;
 	volatile static uint32_t currentTdcDisplaySegment;
+	volatile static uint32_t updateTdcDisplaySegment;
 	volatile static uint32_t lastRpmTimerReading;
 	volatile static uint8_t hallPin;
 #ifdef DEBUG_MODE

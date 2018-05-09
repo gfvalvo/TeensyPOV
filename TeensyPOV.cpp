@@ -32,6 +32,7 @@ volatile uint32_t TeensyPOV::currentColorMask;
 volatile uint32_t TeensyPOV::goodRpmCount;
 volatile uint32_t TeensyPOV::currentDisplaySegment;
 volatile uint32_t TeensyPOV::currentTdcDisplaySegment = 0;
+volatile uint32_t TeensyPOV::updateTdcDisplaySegment = currentTdcDisplaySegment;
 volatile uint32_t TeensyPOV::lastRpmTimerReading;
 volatile uint8_t TeensyPOV::hallPin;
 #ifdef DEBUG_MODE
@@ -304,6 +305,7 @@ void TeensyPOV::setParameters(uint8_t logSegments, uint8_t colorBits,
 	currentSegmentMask = currentNumSegments - 1;
 	currentNumColorBits = colorBits;
 	currentTdcDisplaySegment = tdcSegment;
+	updateTdcDisplaySegment = currentTdcDisplaySegment;
 	currentColorMask = (1 << currentNumColorBits) - 1;
 	pixelsPerWord = 32 / currentNumColorBits;
 
@@ -388,6 +390,7 @@ void TeensyPOV::tdcIsrActive() {
 			>> currentLogNumSegments;
 	segmentTimer->LDVAL = newSegmentCounter;
 	segmentTimer->TCTRL = 3;		// Enable segment PIT and interrupt
+	currentTdcDisplaySegment = updateTdcDisplaySegment;
 	currentDisplaySegment = currentTdcDisplaySegment;
 	updateLeds();	// Set LEDs per currentDisplaySegment
 	currentDisplaySegment = (currentDisplaySegment + 1) & currentSegmentMask;
