@@ -13,8 +13,9 @@ The library is configured to support up to 48 LEDs in the string and up to 512 a
 ![](https://github.com/gfvalvo/TeensyPOV/blob/master/Images/DSC_6008.JPG)
 ![](https://github.com/gfvalvo/TeensyPOV/blob/master/Images/DSC_6011.JPG)
 ![](https://github.com/gfvalvo/TeensyPOV/blob/master/Images/DSC_6020.JPG)
-## Video:
-[](https://youtu.be/CiRSouhlJos)
+
+[A Video](https://youtu.be/CiRSouhlJos)
+
 ## Library Description:
 ### Classes:
 #### Class TeensyPOV
