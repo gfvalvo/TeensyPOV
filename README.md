@@ -1,11 +1,20 @@
-# TeensyPOV
+#TeensyPOV
 POV Project on Teensy 3.2
 
 #WORK IN PROGRESS
 
-# TeensyPOV
+#TeensyPOV
 Library for POV (Persistence of Vision) display using Teensy 3.2 board and Adafuit DotStar LEDs (APA102). A description of the hardware (including schematics and PWB) is in the Hardware folder.
 The library is configured to support up to 48 LEDs in the string and up to 512 angular positions (~0.7 degree resolution). These positions are referred to as "segments" in the code and description below.
+#Sample Images:
+![](https://github.com/gfvalvo/TeensyPOV/blob/master/Images/DSC_5983.JPG)
+![](https://github.com/gfvalvo/TeensyPOV/blob/master/Images/DSC_5985.JPG)
+![](https://github.com/gfvalvo/TeensyPOV/blob/master/Images/DSC_5988.JPG)
+![](https://github.com/gfvalvo/TeensyPOV/blob/master/Images/DSC_5991.JPG)
+![](https://github.com/gfvalvo/TeensyPOV/blob/master/Images/DSC_5995.JPG)
+![](https://github.com/gfvalvo/TeensyPOV/blob/master/Images/DSC_6008.JPG)
+![](https://github.com/gfvalvo/TeensyPOV/blob/master/Images/DSC_6011.JPG)
+![](https://github.com/gfvalvo/TeensyPOV/blob/master/Images/DSC_6020.JPG)
 ## Library Description:
 ### Classes:
 #### Class TeensyPOV
@@ -199,5 +208,4 @@ struct LedArrayStruct {
 The number of Rows is equal to the number of segments in the display. The number of Columns depends on how many color bits are used to represent each LED. For example, with 36 LEDs, Two Bits / LED, and 256 Segments:
 
 ![](https://github.com/gfvalvo/TeensyPOV/blob/master/Images/BitMap.jpg)
-
     
