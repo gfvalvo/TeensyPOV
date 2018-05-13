@@ -1,12 +1,10 @@
-#TeensyPOV
-POV Project on Teensy 3.2
+# TeensyPOV:
 
-#WORK IN PROGRESS
+## POV Project on Teensy 3.2 - WORK IN PROGRESS
 
-#TeensyPOV
-Library for POV (Persistence of Vision) display using Teensy 3.2 board and Adafuit DotStar LEDs (APA102). A description of the hardware (including schematics and PWB) is in the Hardware folder.
+Library for POV (Persistence of Vision) display using Teensy 3.2 board and Adafuit DotStar LEDs (APA102). Descriptions of the hardware (including schematics and PWB) are in the Hardware folder.
 The library is configured to support up to 48 LEDs in the string and up to 512 angular positions (~0.7 degree resolution). These positions are referred to as "segments" in the code and description below.
-#Sample Images:
+## Sample Images:
 ![](https://github.com/gfvalvo/TeensyPOV/blob/master/Images/DSC_5983.JPG)
 ![](https://github.com/gfvalvo/TeensyPOV/blob/master/Images/DSC_5985.JPG)
 ![](https://github.com/gfvalvo/TeensyPOV/blob/master/Images/DSC_5988.JPG)
@@ -15,6 +13,8 @@ The library is configured to support up to 48 LEDs in the string and up to 512 a
 ![](https://github.com/gfvalvo/TeensyPOV/blob/master/Images/DSC_6008.JPG)
 ![](https://github.com/gfvalvo/TeensyPOV/blob/master/Images/DSC_6011.JPG)
 ![](https://github.com/gfvalvo/TeensyPOV/blob/master/Images/DSC_6020.JPG)
+## Video:
+[](https://youtu.be/CiRSouhlJos)
 ## Library Description:
 ### Classes:
 #### Class TeensyPOV
