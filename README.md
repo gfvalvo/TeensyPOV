@@ -211,4 +211,23 @@ The number of Rows is equal to the number of segments in the display. The number
 ![](https://github.com/gfvalvo/TeensyPOV/blob/master/Images/BitMap.jpg)
 
 ## POV Hardware:
+### Block Diagram:
+![](https://github.com/gfvalvo/TeensyPOV/blob/master/Hardware/BlockDiagram.jpg)
+### PWB Schematic:
+![](https://github.com/gfvalvo/TeensyPOV/blob/master/Hardware/Schematic.jpg)
+### PWB Layout:
+![](https://github.com/gfvalvo/TeensyPOV/blob/master/Hardware/PWB.jpg)
+### Populated PWB:
+![](https://github.com/gfvalvo/TeensyPOV/blob/master/Hardware/20180506_165926.jpg)
+### Blank Blade with Hub Mounted:
+![](https://github.com/gfvalvo/TeensyPOV/blob/master/Hardware/20180506_194420.jpg)
+### Backside Components:
+![](https://github.com/gfvalvo/TeensyPOV/blob/master/Hardware/20180509_212934.jpg)
+### Hall Sensor:
+![](https://github.com/gfvalvo/TeensyPOV/blob/master/Hardware/20180509_213005.jpg)
+### LEDs Mounted:
+![](https://github.com/gfvalvo/TeensyPOV/blob/master/Hardware/20180509_213235.jpg)
+
+
+
 
