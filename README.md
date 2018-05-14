@@ -17,9 +17,9 @@ The library is configured to support up to 48 LEDs in the string and up to 512 a
 [Video of POV in Action](https://youtu.be/CiRSouhlJos)
 
 ## Library Description:
-Code in this library directly manipulates the Teensy processor's Programmable Interrupt Timers. Thus, it is incompatible with any code that uses these timers or the Teensyduino IntervalTimer class.
+Code in this library directly manipulates the Teensy processor's Programmable Interrupt Timers. Thus, it is incompatible with any code that uses these timers directly or indirectly via the Teensyduino IntervalTimer class.
 
-All of the folowing class methods are demonstrated in the example sketches.
+All of the following class methods are demonstrated in the example sketches.
 ### Classes:
 #### Class TeensyPOV
 This class interfaces with the hardware and controls the LEDs to produce the POV display. All methods in this class are static. Thus there is no need to instantiate an object of this type.
@@ -239,7 +239,7 @@ The number of Rows is equal to the number of segments in the display. The number
 ![](https://github.com/gfvalvo/TeensyPOV/blob/master/Hardware/20180509_213205.jpg)
 
 # CREDITS
-I shamelessly appropriated the Dot Matrix characters that Arduino Forum user @Jiggy-Ninja used in his POV project posted here:
+I shamelessly appropriated the Dot Matrix characters that Arduino Forum user @Jiggy-Ninja developed for his POV project posted here:
 [Dram Queen](https://forum.arduino.cc/index.php?topic=493075.0)
 
 
