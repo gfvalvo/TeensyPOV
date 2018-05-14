@@ -227,6 +227,13 @@ The number of Rows is equal to the number of segments in the display. The number
 ![](https://github.com/gfvalvo/TeensyPOV/blob/master/Hardware/20180509_213005.jpg)
 ### LEDs Mounted:
 ![](https://github.com/gfvalvo/TeensyPOV/blob/master/Hardware/20180509_213235.jpg)
+### Start with this Fan
+![](https://github.com/gfvalvo/TeensyPOV/blob/master/Hardware/Fan.jpg)
+[$20 From Target](https://www.target.com/p/holmes-174-20-3-speed-box-fan-black-hbf2001d-b/-/A-15024768)
+### Reverse these Rails as Shown to Push Motor Further out the Back.
+![](https://github.com/gfvalvo/TeensyPOV/blob/master/Hardware/20180509_213136.jpg)
+### Reverse these Brackets as Shown to Push Motor Further out the Back.
+![](https://github.com/gfvalvo/TeensyPOV/blob/master/Hardware/20180509_213205.jpg)
 
 
 
