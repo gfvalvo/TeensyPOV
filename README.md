@@ -237,6 +237,8 @@ The number of Rows is equal to the number of segments in the display. The number
 ![](https://github.com/gfvalvo/TeensyPOV/blob/master/Hardware/20180509_213136.jpg)
 ### Reverse these Brackets as Shown to Push Motor Further out the Back.
 ![](https://github.com/gfvalvo/TeensyPOV/blob/master/Hardware/20180509_213205.jpg)
+### Hall device senses magnet and signal processor that LEDs are in the Top Dead Center position.
+![](https://github.com/gfvalvo/TeensyPOV/blob/master/Hardware/20180514_064618.jpg)
 
 # CREDITS
 I shamelessly appropriated the Dot Matrix characters that Arduino Forum user @Jiggy-Ninja developed for his POV project posted here:
