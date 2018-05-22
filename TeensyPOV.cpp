@@ -191,7 +191,7 @@ void TeensyPOV::setPixel(uint16_t segment, uint16_t pixel, uint32_t value) {
 
 
 void TeensyPOV::loadColors(const uint32_t *cPtr) {
-	uint8_t index1;
+	uint16_t index1;
 	for (index1 = 0; index1 < (1 << currentNumColorBits); index1++) {
 		colorArray[index1] = *(cPtr + index1);
 	}

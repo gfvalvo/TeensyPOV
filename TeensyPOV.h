@@ -107,7 +107,8 @@ private:
 	static KINETISK_PIT_CHANNEL_t *rpmTimer;
 	static KINETISK_PIT_CHANNEL_t *segmentTimer;
 #ifdef SIMULATE_RPM
-	static const uint32_t tdcSimulatorCycles = (F_BUS / 1000000UL) * 52174UL - 1;
+	static const uint32_t tdcSimulatorCycles = (F_BUS / 1000000UL) * 50000UL
+			- 1;
 	static KINETISK_PIT_CHANNEL_t *tdcSimulator;
 #endif  // SIMULATE_RPM
 
