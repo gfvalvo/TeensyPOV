@@ -15,6 +15,7 @@ The library is configured to support up to 48 LEDs in the string and up to 512 a
 ![](https://github.com/gfvalvo/TeensyPOV/blob/master/Images/DSC_6020.JPG)
 
 [Video of POV in Action](https://youtu.be/CiRSouhlJos)
+Note that interaction between the video's frame rate and the LED refresh rate causes some artifacts that aren't really there when you view the POV in person.
 
 ## Library Description:
 Code in this library directly manipulates the Teensy processor's Programmable Interrupt Timers. Thus, it is incompatible with any code that uses these timers directly or indirectly via the Teensyduino IntervalTimer class.
